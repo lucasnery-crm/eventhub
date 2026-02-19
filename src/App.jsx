@@ -159,7 +159,7 @@ export default function App() {
 
   const kpE = useMemo(()=>{
     const tot=emps.length;
-    const cli=emps.filter(r=>r.status_da_empresa__cliente==="TRUE").length;
+    const cli=emps.filter(r=>r.status_da_empresa__cliente?.toLowerCase()==="true").length;
     const t01=emps.filter(r=>r.tier_growth==="0"||r.tier_growth==="1").length;
     const byT={},byS={};
     emps.forEach(r=>{
@@ -343,7 +343,7 @@ export default function App() {
                   <td style={{...td,color:C.text}}><Trunc s={r.name} n={30}/></td>
                   <td style={td}><span style={tb}>{tl(t)}</span></td>
                   <td style={td}><Trunc s={r.setor_picklist||"—"} n={20}/></td>
-                  <td style={{...td,color:r.status_da_empresa__cliente==="TRUE"?C.green:C.dim}}>{r.status_da_empresa__cliente==="TRUE"?"Cliente":"Prospect"}</td>
+                  <td style={{...td,color:r.status_da_empresa__cliente?.toLowerCase()==="true"?C.green:C.dim}}>{r.status_da_empresa__cliente?.toLowerCase()==="true"?"Cliente":"Prospect"}</td>
                 </tr>
               );
             })}
