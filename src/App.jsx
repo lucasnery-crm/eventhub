@@ -212,7 +212,7 @@ export default function App() {
     return {nEmp:ep.length,nInf:inf.length,ri,nDir:dir.length,rd,
             tInf:inf.length?ri/inf.length:0,tDir:dir.length?rd/dir.length:0,
             pT:ep.length?(t01/ep.length)*100:0};
-  },[]);
+  },[rawEmpresas,rawDeals]);
 
   const perEv = useMemo(()=>{
     if(selEvs.length<2)return {};
