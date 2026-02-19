@@ -131,7 +131,7 @@ export default function App() {
     const m={};
     rawEmpresas.forEach(r=>{ if(r.company_id) m[r.company_id]=r.tier_growth||""; });
     return m;
-  },[]);
+  },[rawEmpresas]);
 
   const dealsInf = useMemo(()=>{
     if(!selEvs.length||!win)return [];
