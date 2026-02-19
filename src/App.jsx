@@ -94,7 +94,7 @@ export default function App() {
     const s=new Set();
     rawEmpresas.forEach(r=>(r.eventos__picklist_de_presenca||"").split(";").forEach(e=>{const t=e.trim();if(t)s.add(t);}));
     return [...s].sort();
-  },[]);
+  },[rawEmpresas]);
 
   const win = useMemo(()=>{
     const ws=selEvs.map(ev=>{
