@@ -1,22 +1,12 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from "recharts";
 
-const PROXY_URL = "https://script.google.com/macros/s/AKfycbzOBVmkFPh90pfSnrNzamHmlVtoVBsJW0lI9Z31sPewtv8eeIZCKBGLE2--TLDvje3Urg/exec";
+const PROXY_URL = "/api/sheet";
 
-function fetchSheet(sheet) {
-  // JSONP — bypasses CORS/redirect issue with Apps Script
-  return new Promise((resolve, reject) => {
-    const cbName = "_cb_" + sheet + "_" + Date.now();
-    const script = document.createElement("script");
-    script.src = `${PROXY_URL}?sheet=${sheet}&callback=${cbName}`;
-    script.onerror = () => reject(new Error(`Erro ao carregar ${sheet}`));
-    window[cbName] = (data) => {
-      delete window[cbName];
-      document.body.removeChild(script);
-      resolve(data);
-    };
-    document.body.appendChild(script);
-  });
+async function fetchSheet(sheet) {
+  const res = await fetch(`${PROXY_URL}?sheet=${sheet}`);
+  if (!res.ok) throw new Error(`Erro ao buscar ${sheet}: ${res.status}`);
+  return res.json();
 }
 
 
