@@ -52,6 +52,7 @@ const Trunc = ({s,n=26}) => { const t=s||"—"; return <span title={t}>{t.length
 export default function App() {
   const [rawEmpresas, setRawEmpresas] = useState([]);
   const [rawDeals, setRawDeals] = useState([]);
+  const [rawContatos, setRawContatos] = useState([]);
   const [dpMap, setDpMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadMsg, setLoadMsg] = useState("Carregando...");
@@ -60,6 +61,7 @@ export default function App() {
   const [tab, setTab] = useState(0);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
+  const [expandedEmp, setExpandedEmp] = useState(null);
   const ref = useRef(null);
 
   useEffect(()=>{
@@ -73,6 +75,9 @@ export default function App() {
         setRawDeals(deals);
         setLoadMsg("Carregando de-para...");
         const dp = await fetchSheet("de_para");
+        setLoadMsg("Carregando contatos...");
+        const contatos = await fetchSheet("contatos");
+        setRawContatos(contatos);
         const m={};
         dp.forEach(r=>{
           if(r.pipeline_stage&&r.stage_name) m[r.pipeline_stage]=r.stage_name;
@@ -130,6 +135,33 @@ export default function App() {
   const empTierMap = useMemo(()=>{
     const m={};
     rawEmpresas.forEach(r=>{ if(r.company_id) m[r.company_id]=r.tier_growth||""; });
+    return m;
+  },[rawEmpresas]);
+
+  // Map company_id -> contatos que foram ao(s) evento(s) selecionado(s)
+  const contatosPorEmpresa = useMemo(()=>{
+    if(!selEvs.length) return {};
+    const m={};
+    rawContatos.forEach(r=>{
+      const evConf = (r.eventos__participou||"").split(";").map(e=>e.trim());
+      const evConv = (r.eventos__convidado||"").split(";").map(e=>e.trim());
+      const relevant = selEvs.some(se => evConf.includes(se) || evConv.includes(se));
+      if(!relevant) return;
+      if(!r.company_id) return;
+      if(!m[r.company_id]) m[r.company_id]=[];
+      m[r.company_id].push(r);
+    });
+    return m;
+  },[rawContatos, selEvs]);
+
+  // Map company_id -> todos os eventos que a empresa participou
+  const historicoEmpresa = useMemo(()=>{
+    const m={};
+    rawEmpresas.forEach(r=>{
+      if(!r.company_id) return;
+      const evs=(r.eventos__picklist_de_presenca||"").split(";").map(e=>e.trim()).filter(Boolean);
+      m[r.company_id]=evs;
+    });
     return m;
   },[rawEmpresas]);
 
@@ -330,10 +362,11 @@ export default function App() {
           </ResponsiveContainer>
         </div>
       </div>
-      <div style={sTit}>PERFIL DAS EMPRESAS</div>
+      <div style={sTit}>PERFIL DAS EMPRESAS <span style={{color:"#333",fontWeight:400,letterSpacing:0}}>— clique para ver contatos e histórico</span></div>
       <div style={{...card,padding:0,overflow:"hidden"}}>
         <table style={{width:"100%",borderCollapse:"collapse"}}>
           <thead><tr>
+            <th style={{...th,textAlign:"left",width:24}}></th>
             <th style={{...th,textAlign:"left"}}>EMPRESA</th>
             <th style={{...th,textAlign:"left",width:52}}>TIER</th>
             <th style={{...th,textAlign:"left"}}>SEGMENTO</th>
@@ -343,13 +376,88 @@ export default function App() {
             {profT.map((r,i)=>{
               const t=r.tier_growth||"";
               const tb={background:`${TIER_C[t]||"#333"}18`,color:TIER_C[t]||"#555",borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${TIER_C[t]||"#333"}30`,display:"inline-block"};
+              const isExp = expandedEmp===r.company_id;
+              const contatos = contatosPorEmpresa[r.company_id]||[];
+              const historico = historicoEmpresa[r.company_id]||[];
               return (
-                <tr key={i} style={{background:i%2===0?"rgba(255,255,255,0.015)":"transparent"}}>
-                  <td style={{...td,color:C.text}}><Trunc s={r.name} n={30}/></td>
-                  <td style={td}><span style={tb}>{tl(t)}</span></td>
-                  <td style={td}><Trunc s={r.setor_picklist||"—"} n={20}/></td>
-                  <td style={{...td,color:r.status_da_empresa__cliente?.toLowerCase()==="true"?C.green:C.dim}}>{r.status_da_empresa__cliente?.toLowerCase()==="true"?"Cliente":"Prospect"}</td>
-                </tr>
+                <>
+                  <tr key={i}
+                    onClick={()=>setExpandedEmp(isExp?null:r.company_id)}
+                    style={{background:isExp?"rgba(255,165,0,0.05)":i%2===0?"rgba(255,255,255,0.015)":"transparent",cursor:"pointer",transition:"background 0.15s"}}>
+                    <td style={{...td,width:24,color:"#444",fontSize:10,textAlign:"center"}}>{isExp?"▼":"▶"}</td>
+                    <td style={{...td,color:C.text,fontWeight:isExp?500:400}}><Trunc s={r.name} n={30}/></td>
+                    <td style={td}><span style={tb}>{tl(t)}</span></td>
+                    <td style={td}><Trunc s={r.setor_picklist||"—"} n={20}/></td>
+                    <td style={{...td,color:r.status_da_empresa__cliente?.toLowerCase()==="true"?C.green:C.dim}}>{r.status_da_empresa__cliente?.toLowerCase()==="true"?"Cliente":"Prospect"}</td>
+                  </tr>
+                  {isExp&&(
+                    <tr key={`exp-${i}`}>
+                      <td colSpan={5} style={{padding:0,background:"#141414",borderBottom:`1px solid ${C.border}`}}>
+                        <div style={{padding:"12px 16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+
+                          {/* CONTATOS */}
+                          <div>
+                            <div style={{fontSize:9,color:C.orange,letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:600}}>
+                              👤 Contatos no evento {contatos.length>0?`(${contatos.length})`:""}
+                            </div>
+                            {contatos.length===0?(
+                              <div style={{fontSize:11,color:"#333",fontStyle:"italic"}}>Nenhum contato registrado para este(s) evento(s)</div>
+                            ):(
+                              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                                <thead><tr>
+                                  <th style={{...th,fontSize:8,padding:"4px 8px",background:"transparent"}}>NOME</th>
+                                  <th style={{...th,fontSize:8,padding:"4px 8px",background:"transparent"}}>CARGO</th>
+                                  <th style={{...th,fontSize:8,padding:"4px 8px",background:"transparent",width:60}}>STATUS</th>
+                                </tr></thead>
+                                <tbody>
+                                  {contatos.map((c,ci)=>{
+                                    const nome = [c.firstname,c.lastname].filter(Boolean).join(" ")||"—";
+                                    const participou = c.eventos__participou?.split(";").map(e=>e.trim()).some(e=>selEvs.includes(e));
+                                    return (
+                                      <tr key={ci}>
+                                        <td style={{...td,fontSize:11,padding:"4px 8px",color:C.text,borderBottom:`1px solid #1A1A1A`}}>{nome}</td>
+                                        <td style={{...td,fontSize:10,padding:"4px 8px",borderBottom:`1px solid #1A1A1A`}}><Trunc s={c.jobtitle||"—"} n={22}/></td>
+                                        <td style={{...td,fontSize:9,padding:"4px 8px",borderBottom:`1px solid #1A1A1A`,width:60}}>
+                                          <span style={{background:participou?"rgba(34,197,94,0.1)":"rgba(255,165,0,0.1)",color:participou?C.green:C.orange,borderRadius:3,padding:"1px 5px",fontSize:8,fontWeight:600}}>
+                                            {participou?"✓ Foi":"Convidado"}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+
+                          {/* HISTÓRICO */}
+                          <div>
+                            <div style={{fontSize:9,color:C.crayola,letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:600}}>
+                              📅 Histórico de eventos ({historico.length})
+                            </div>
+                            {historico.length===0?(
+                              <div style={{fontSize:11,color:"#333",fontStyle:"italic"}}>Sem histórico</div>
+                            ):(
+                              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                                {historico.sort().reverse().map((ev,ei)=>{
+                                  const isSelected = selEvs.includes(ev);
+                                  return (
+                                    <div key={ei} style={{fontSize:11,color:isSelected?C.orange:C.dim,display:"flex",alignItems:"center",gap:6}}>
+                                      <span style={{width:6,height:6,borderRadius:"50%",background:isSelected?C.orange:"#333",flexShrink:0,display:"inline-block"}}/>
+                                      {ev}
+                                      {isSelected&&<span style={{fontSize:8,color:C.orange,fontWeight:700}}>← ATUAL</span>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
               );
             })}
           </tbody>
