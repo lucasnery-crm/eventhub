@@ -28,8 +28,13 @@ const fAmt = v => { if(!v)return 0; return parseFloat(String(v).replace(/[R$\s]/
 
 function parseReal(v) {
   if (!v) return null;
-  const p = String(v).split("/");
+  const s = String(v).trim();
+  // Format M/D/YYYY (from CSV)
+  const p = s.split("/");
   if (p.length===3) return new Date(+p[2], +p[0]-1, +p[1]);
+  // Format "Fri Aug 29 2025 ..." (from Apps Script date serialization)
+  const d = new Date(s);
+  if (!isNaN(d)) return d;
   return null;
 }
 function fDate(v) {
