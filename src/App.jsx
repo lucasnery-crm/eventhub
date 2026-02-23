@@ -108,6 +108,7 @@ export default function App() {
   const [rawDeals, setRawDeals] = useState([]);
   const [rawContatos, setRawContatos] = useState([]);
   const [rawCustos, setRawCustos] = useState([]);
+  const [rawTarget, setRawTarget] = useState([]);
   const [dpMap, setDpMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadMsg, setLoadMsg] = useState("Carregando...");
@@ -119,7 +120,16 @@ export default function App() {
   const [open, setOpen] = useState(false);
   const [expandedEmp, setExpandedEmp] = useState(null);
   const [demoMode, setDemoMode] = useState(false);
-  const [authed, setAuthed] = useState(()=>!!sessionStorage.getItem("eh_user"));
+  const [gNome, setGNome] = useState("");
+  const [gObjetivo, setGObjetivo] = useState("");
+  const [gSegmentos, setGSegmentos] = useState([]);
+  const [gTiers, setGTiers] = useState([]);
+  const [gStatus, setGStatus] = useState("ambos");
+  const [gVagas, setGVagas] = useState("50");
+  const [gTexto, setGTexto] = useState("");
+  const [gLoading, setGLoading] = useState(false);
+  const [gResultado, setGResultado] = useState(null);
+  const [gErro, setGErro] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginErr, setLoginErr] = useState("");
@@ -149,6 +159,12 @@ export default function App() {
           setRawCustos(Array.isArray(custos) ? custos : []);
         } catch(e) {
           setRawCustos([]);
+        }
+        try {
+          const target = await fetchSheet("target");
+          setRawTarget(Array.isArray(target) ? target : []);
+        } catch(e) {
+          setRawTarget([]);
         }
         const m={};
         dp.forEach(r=>{
@@ -183,36 +199,6 @@ export default function App() {
     setDpMap(m);
     setDemoMode(true);
     setLoading(false);
-  };
-
-  const handleLogin = async(e) => {
-    e.preventDefault();
-    setLoginLoading(true);
-    setLoginErr("");
-    try {
-      const res = await fetch("/api/auth", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({email:loginEmail.trim(), password:loginPass})
-      });
-      const data = await res.json();
-      if(data.ok) {
-        sessionStorage.setItem("eh_user", data.email);
-        setAuthed(true);
-      } else {
-        setLoginErr(data.error || "Erro ao autenticar");
-      }
-    } catch(err) {
-      setLoginErr("Erro de conexão");
-    }
-    setLoginLoading(false);
-  };
-
-  const handleLogout = () => {
-    sessionStorage.removeItem("eh_user");
-    setAuthed(false);
-    setLoginEmail("");
-    setLoginPass("");
   };
 
   const dp = useCallback(v=>(!v?"":dpMap[v]||v), [dpMap]);
@@ -916,135 +902,261 @@ export default function App() {
     );
   };
 
-  if (!authed) return (
-    <div style={{background:"#1A1A1A",minHeight:"100vh",fontFamily:FONT,display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
-      <div style={{background:"#222",border:"1px solid #333",borderRadius:12,padding:"40px 36px",width:360,boxShadow:"0 24px 64px rgba(0,0,0,0.6)"}}>
-        <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{display:"inline-flex",alignItems:"center",gap:8,fontWeight:700,fontSize:20,color:"#FFF",marginBottom:6}}>
-            <div style={{background:C.orange,borderRadius:6,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#000"}}>⚡</div>
-            Event<span style={{color:C.orange}}>Hub</span>
-          </div>
-          <div style={{fontSize:11,color:"#555",letterSpacing:1.5,textTransform:"uppercase",marginTop:4}}>Acesso restrito</div>
-        </div>
-        <form onSubmit={handleLogin}>
-          <div style={{marginBottom:12}}>
-            <label style={{fontSize:10,color:"#666",letterSpacing:0.8,textTransform:"uppercase",display:"block",marginBottom:5}}>E-mail @crmbonus.com</label>
-            <input
-              type="email"
-              value={loginEmail}
-              onChange={e=>setLoginEmail(e.target.value)}
-              placeholder="seu.nome@crmbonus.com"
-              required
-              style={{width:"100%",background:"#2A2A2A",border:"1px solid #333",borderRadius:6,padding:"9px 12px",color:"#EEE",fontSize:13,outline:"none",boxSizing:"border-box"}}
-            />
-          </div>
-          <div style={{marginBottom:20}}>
-            <label style={{fontSize:10,color:"#666",letterSpacing:0.8,textTransform:"uppercase",display:"block",marginBottom:5}}>Senha</label>
-            <input
-              type="password"
-              value={loginPass}
-              onChange={e=>setLoginPass(e.target.value)}
-              placeholder="••••••••"
-              required
-              style={{width:"100%",background:"#2A2A2A",border:"1px solid #333",borderRadius:6,padding:"9px 12px",color:"#EEE",fontSize:13,outline:"none",boxSizing:"border-box"}}
-            />
-          </div>
-          {loginErr&&<div style={{background:"rgba(252,70,69,0.1)",border:"1px solid rgba(252,70,69,0.3)",borderRadius:6,padding:"8px 12px",fontSize:12,color:"#FC4645",marginBottom:14}}>{loginErr}</div>}
-          <button
-            type="submit"
-            disabled={loginLoading}
-            style={{width:"100%",background:C.orange,border:"none",borderRadius:6,padding:"10px",color:"#000",fontSize:13,fontWeight:700,cursor:loginLoading?"not-allowed":"pointer",fontFamily:FONT,opacity:loginLoading?0.7:1}}
-          >
-            {loginLoading?"Entrando...":"Entrar"}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
 
-  if (loading) return (
-    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:14}}>
-      <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
-      <div style={{width:36,height:36,border:`2px solid ${C.border}`,borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-      <span style={{fontSize:11,color:C.muted,letterSpacing:1.5}}>{loadMsg.toUpperCase()}</span>
-      {loadErr&&<span style={{fontSize:12,color:C.tart,maxWidth:400,textAlign:"center"}}>{loadErr}</span>}
-    </div>
-  );
+  // ─── TAB 5 — GERADOR DE LISTA ──────────────────────────────────────────────
+  const allSegmentos = useMemo(()=>{
+    const s=new Set();
+    rawEmpresas.forEach(r=>{ if(r.setor_picklist) s.add(r.setor_picklist); });
+    rawTarget.forEach(r=>{ if(r.setor_picklist) s.add(r.setor_picklist); });
+    return [...s].sort();
+  },[rawEmpresas, rawTarget]);
 
-  return (
-    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,color:C.text,fontSize:13,fontSmoothing:"antialiased"}}>
-      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
-      <div style={hdr}>
-        <div style={{maxWidth:1440,margin:"0 auto",padding:"10px 22px"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{display:"flex",alignItems:"center",gap:9,fontWeight:700,fontSize:16,color:C.headerText}}>
-              <div style={{background:C.orange,borderRadius:5,width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#000"}}>⚡</div>
-              Event<span style={{color:C.orange}}>Hub</span>
-              {demoMode&&<span style={{background:"rgba(255,165,0,0.15)",color:C.orange,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:20,border:`1px solid ${C.orange}`,letterSpacing:1}}>DEMO</span>}
+  const handleGerarLista = async()=>{
+    setGLoading(true);
+    setGErro("");
+    setGResultado(null);
+
+    // Build company summaries — base ativa (já foi a evento)
+    const idsAtivos = new Set(rawEmpresas.map(r=>r.company_id));
+    const empresasSummary = rawEmpresas.map(r=>{
+      const eventos = (r.eventos__picklist_de_presenca||"").split(";").map(e=>e.trim()).filter(Boolean);
+      const dealsEmp = rawDeals.filter(d=>d.company_id===r.company_id);
+      const dealsAbertos = dealsEmp.filter(d=>d.dealstage&&!["closedwon","closedlost"].includes(d.dealstage));
+      const receitaTotal = dealsEmp.reduce((s,d)=>s+fAmt(d.amount),0);
+      return {
+        id: r.company_id,
+        nome: r.name,
+        tier: r.tier_growth||"",
+        segmento: r.setor_picklist||"",
+        cliente: r.status_da_empresa__cliente?.toLowerCase()==="true",
+        base: "ativa",
+        qtdEventos: eventos.length,
+        dealsAbertos: dealsAbertos.length,
+        receitaTotal,
+      };
+    });
+
+    // Add target companies (not already in base ativa)
+    const targetSummary = rawTarget
+      .filter(r=>!idsAtivos.has(r.company_id))
+      .map(r=>({
+        id: r.company_id,
+        nome: r.name,
+        tier: r.tier_growth||"",
+        segmento: r.setor_picklist||"",
+        cliente: r.status_da_empresa__cliente?.toLowerCase()==="true",
+        base: "target",
+        qtdEventos: 0,
+        dealsAbertos: 0,
+        receitaTotal: 0,
+        plataforma: r.plataforma_ecommerce||"",
+        totalLojas: r.total_lojas||"",
+        volumeEcommerce: r.volume_ecommerce||"",
+      }));
+
+    const todasEmpresas = [...empresasSummary, ...targetSummary];
+
+    // Apply structural filters first
+    let filtradas = todasEmpresas;
+    if(gSegmentos.length>0) filtradas = filtradas.filter(e=>gSegmentos.includes(e.segmento));
+    if(gTiers.length>0) filtradas = filtradas.filter(e=>gTiers.includes(e.tier));
+    if(gStatus==="cliente") filtradas = filtradas.filter(e=>e.cliente);
+    if(gStatus==="prospect") filtradas = filtradas.filter(e=>!e.cliente);
+
+    // Limit to 200 companies to avoid token overflow
+    const amostra = filtradas.slice(0,200);
+
+    try {
+      const res = await fetch("/api/generate", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          nomeEvento: gNome,
+          objetivo: gObjetivo,
+          vagas: gVagas,
+          texto: gTexto,
+          empresas: amostra,
+        })
+      });
+      if(!res.ok) {
+        const err = await res.json();
+        setGErro(err.error || "Erro ao gerar lista.");
+        setGLoading(false);
+        return;
+      }
+      const parsed = await res.json();
+      setGResultado(parsed);
+    } catch(err) {
+      setGErro("Erro de conexão. Tente novamente.");
+    }
+    setGLoading(false);
+  };
+
+  const exportCSV = ()=>{
+    if(!gResultado) return;
+    const rows = [["company_name","tier","segmento","status","base","prioridade","justificativa"]];
+    gResultado.lista.forEach(r=>{
+      rows.push([r.empresa, "T"+r.tier, r.segmento, r.status, r.base||"", r.prioridade, r.justificativa]);
+    });
+    const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href=url; a.download=`lista_${(gNome||"evento").replace(/\s+/g,"_")}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
+  const Tab5 = ()=>{
+    const togSeg = s => setGSegmentos(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s]);
+    const togTier = t => setGTiers(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
+    const sc = p => p<=10?C.green:p<=25?C.orange:C.crayola;
+
+    return (
+      <div style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:16,alignItems:"start"}}>
+
+        {/* LEFT — BRIEFING */}
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{...card,borderTop:`3px solid ${C.orange}`}}>
+            <div style={{fontSize:11,color:C.orange,fontWeight:700,letterSpacing:0.8,marginBottom:14,textTransform:"uppercase"}}>📋 Briefing do Evento</div>
+
+            <div style={{marginBottom:10}}>
+              <label style={{...kLbl,display:"block",marginBottom:4}}>Nome do evento</label>
+              <input value={gNome} onChange={e=>setGNome(e.target.value)} placeholder="Ex: 2026-05 EVENTO VAREJO SUMMIT" style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"7px 10px",fontSize:12,color:C.text,outline:"none",boxSizing:"border-box"}}/>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <span style={{fontSize:9,color:"#AAA",letterSpacing:2}}>ANÁLISE ESTRATÉGICA DE EVENTOS</span>
-              <button onClick={handleLogout} style={{background:"transparent",border:"1px solid #333",borderRadius:4,padding:"3px 10px",color:"#666",fontSize:10,cursor:"pointer",fontFamily:FONT}}>Sair</button>
+
+            <div style={{marginBottom:10}}>
+              <label style={{...kLbl,display:"block",marginBottom:4}}>Objetivo</label>
+              <select value={gObjetivo} onChange={e=>setGObjetivo(e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"7px 10px",fontSize:12,color:gObjetivo?C.text:C.muted,outline:"none",boxSizing:"border-box"}}>
+                <option value="">Selecione...</option>
+                <option>Gerar novos negócios (prospects)</option>
+                <option>Acelerar deals em andamento</option>
+                <option>Fidelizar clientes atuais</option>
+                <option>Misto (clientes e prospects)</option>
+              </select>
             </div>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,flexWrap:"wrap"}}>
-            <div style={{position:"relative"}} ref={ref}>
-              <div onClick={()=>setOpen(o=>!o)} style={{background:"#2A2A2A",border:"1px solid #444",borderRadius:6,padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,minWidth:240,fontSize:12,color:"#EEE"}}>
-                <span style={{flex:1,color:selEvs.length?"#EEE":"#777"}}>{selEvs.length?`${selEvs.length} evento${selEvs.length>1?"s":""} selecionado${selEvs.length>1?"s":""}`:"Selecionar eventos..."}</span>
-                <span style={{color:"#333",fontSize:9}}>{open?"▲":"▼"}</span>
+
+            <div style={{marginBottom:10}}>
+              <label style={{...kLbl,display:"block",marginBottom:4}}>Vagas</label>
+              <input type="number" value={gVagas} onChange={e=>setGVagas(e.target.value)} min="1" max="500" style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"7px 10px",fontSize:12,color:C.text,outline:"none",boxSizing:"border-box"}}/>
+            </div>
+
+            <div style={{marginBottom:10}}>
+              <label style={{...kLbl,display:"block",marginBottom:4}}>Status</label>
+              <div style={{display:"flex",gap:6}}>
+                {["ambos","cliente","prospect"].map(s=>(
+                  <button key={s} onClick={()=>setGStatus(s)} style={{flex:1,padding:"6px",fontSize:11,borderRadius:5,border:`1px solid ${gStatus===s?C.orange:C.border}`,background:gStatus===s?`rgba(255,165,0,0.08)`:"transparent",color:gStatus===s?C.orange:C.dim,cursor:"pointer",textTransform:"capitalize",fontFamily:FONT}}>
+                    {s==="ambos"?"Ambos":s==="cliente"?"Clientes":"Prospects"}
+                  </button>
+                ))}
               </div>
-              {open&&(
-                <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,width:300,background:"#222",border:"1px solid #444",borderRadius:6,zIndex:300,maxHeight:240,overflowY:"auto",boxShadow:"0 12px 32px rgba(0,0,0,0.7)"}}>
-                  <input style={{width:"100%",background:"#1A1A1A",border:"none",borderBottom:"1px solid #333",padding:"7px 12px",color:"#EEE",fontSize:12,outline:"none",boxSizing:"border-box"}} placeholder="Buscar..." value={q} onChange={e=>setQ(e.target.value)} autoFocus/>
-                  {filtEvs.length===0&&<div style={{padding:"12px",textAlign:"center",color:"#333",fontSize:12}}>{allEvs.length===0?"Nenhum evento":"Nenhum resultado"}</div>}
-                  {filtEvs.map(ev=>(
-                    <div key={ev} onClick={()=>tog(ev)} style={{padding:"7px 12px",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",gap:7,background:selEvs.includes(ev)?"rgba(255,165,0,0.07)":"transparent",color:selEvs.includes(ev)?C.orange:"#666"}}>
-                      <span style={{width:12,height:12,borderRadius:2,border:`1.5px solid ${selEvs.includes(ev)?C.orange:"#333"}`,background:selEvs.includes(ev)?C.orange:"transparent",display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:"#000",fontSize:8,fontWeight:700}}>
-                        {selEvs.includes(ev)?"✓":""}
-                      </span>
-                      {ev}
-                    </div>
-                  ))}
+            </div>
+
+            <div style={{marginBottom:10}}>
+              <label style={{...kLbl,display:"block",marginBottom:4}}>Tiers ({gTiers.length===0?"todos":gTiers.map(t=>"T"+t).join(", ")})</label>
+              <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                {["0","1","2","3","4"].map(t=>(
+                  <button key={t} onClick={()=>togTier(t)} style={{padding:"3px 10px",fontSize:11,borderRadius:4,border:`1px solid ${gTiers.includes(t)?TIER_C[t]:C.border}`,background:gTiers.includes(t)?`${TIER_C[t]}18`:"transparent",color:gTiers.includes(t)?TIER_C[t]:C.dim,cursor:"pointer",fontFamily:FONT,fontWeight:gTiers.includes(t)?700:400}}>
+                    T{t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{marginBottom:14}}>
+              <label style={{...kLbl,display:"block",marginBottom:4}}>Segmentos ({gSegmentos.length===0?"todos":gSegmentos.length+" selecionados"})</label>
+              <div style={{display:"flex",gap:4,flexWrap:"wrap",maxHeight:80,overflowY:"auto"}}>
+                {allSegmentos.map(s=>(
+                  <button key={s} onClick={()=>togSeg(s)} style={{padding:"3px 8px",fontSize:10,borderRadius:4,border:`1px solid ${gSegmentos.includes(s)?C.orange:C.border}`,background:gSegmentos.includes(s)?`rgba(255,165,0,0.08)`:"transparent",color:gSegmentos.includes(s)?C.orange:C.dim,cursor:"pointer",fontFamily:FONT,whiteSpace:"nowrap"}}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{marginBottom:14}}>
+              <label style={{...kLbl,display:"block",marginBottom:4}}>Instruções adicionais (opcional)</label>
+              <textarea value={gTexto} onChange={e=>setGTexto(e.target.value)} placeholder="Ex: Priorize empresas com deal aberto, evite quem foi nos últimos 2 eventos..." rows={3} style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"7px 10px",fontSize:12,color:C.text,outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:FONT}}/>
+            </div>
+
+            <button onClick={handleGerarLista} disabled={gLoading||!gNome||!gObjetivo} style={{width:"100%",background:(!gNome||!gObjetivo)?C.border:C.orange,border:"none",borderRadius:6,padding:"10px",color:(!gNome||!gObjetivo)?"#999":"#000",fontSize:13,fontWeight:700,cursor:(!gNome||!gObjetivo||gLoading)?"not-allowed":"pointer",fontFamily:FONT,opacity:gLoading?0.7:1}}>
+              {gLoading?"⏳ Gerando lista...":"✨ Gerar Lista com IA"}
+            </button>
+            {gErro&&<div style={{marginTop:8,fontSize:11,color:C.tart}}>{gErro}</div>}
+          </div>
+        </div>
+
+        {/* RIGHT — RESULTADO */}
+        <div>
+          {!gResultado&&!gLoading&&(
+            <div style={{...card,padding:"56px 24px",textAlign:"center"}}>
+              <div style={{fontSize:32,marginBottom:10}}>✨</div>
+              <div style={{fontSize:13,color:C.orange,fontWeight:600,marginBottom:6}}>Gerador de Lista com IA</div>
+              <div style={{fontSize:12,color:C.muted}}>Preencha o briefing ao lado e clique em Gerar Lista</div>
+            </div>
+          )}
+          {gLoading&&(
+            <div style={{...card,padding:"56px 24px",textAlign:"center"}}>
+              <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
+              <div style={{width:36,height:36,border:`2px solid ${C.border}`,borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 16px"}}/>
+              <div style={{fontSize:12,color:C.muted}}>Analisando {rawEmpresas.length + rawTarget.length} empresas ({rawEmpresas.length} ativas + {rawTarget.length} target)...</div>
+            </div>
+          )}
+          {gResultado&&(
+            <div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div>
+                  <div style={sTit}>{gResultado.lista?.length} EMPRESAS SELECIONADAS de {gResultado.total_analisado} analisadas</div>
+                </div>
+                <button onClick={exportCSV} style={{background:C.orange,border:"none",borderRadius:6,padding:"7px 14px",color:"#000",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:FONT}}>
+                  ⬇ Exportar CSV
+                </button>
+              </div>
+              {gResultado.resumo&&(
+                <div style={{...card,marginBottom:12,borderLeft:`3px solid ${C.orange}`,padding:"12px 14px"}}>
+                  <div style={{fontSize:10,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:4}}>Estratégia da lista</div>
+                  <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>{gResultado.resumo}</div>
                 </div>
               )}
+              <div style={{...card,padding:0,overflow:"hidden"}}>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead><tr>
+                    <th style={{...th,width:32,textAlign:"right"}}>#</th>
+                    <th style={{...th,textAlign:"left"}}>EMPRESA</th>
+                    <th style={{...th,width:44,textAlign:"left"}}>TIER</th>
+                    <th style={{...th,width:100,textAlign:"left"}}>SEGMENTO</th>
+                    <th style={{...th,width:80,textAlign:"left"}}>STATUS</th>
+                    <th style={{...th,width:70,textAlign:"left"}}>BASE</th>
+                    <th style={{...th,textAlign:"left"}}>JUSTIFICATIVA</th>
+                  </tr></thead>
+                  <tbody>
+                    {gResultado.lista?.map((r,i)=>{
+                      const t=r.tier||"";
+                      const tb={background:`${TIER_C[t]||"#EEE"}30`,color:TIER_C[t]||"#999",borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${TIER_C[t]||"#DDD"}`,display:"inline-block"};
+                      return (
+                        <tr key={i} style={{background:i%2===0?"rgba(0,0,0,0.02)":"transparent"}}>
+                          <td style={{...td,width:32,textAlign:"right",color:"#CCC",fontSize:11}}>{r.prioridade}</td>
+                          <td style={{...td,color:C.text,fontWeight:500}}>{r.empresa}</td>
+                          <td style={{...td,width:44}}><span style={tb}>{tl(t)}</span></td>
+                          <td style={{...td,width:100,fontSize:11}}>{r.segmento||"—"}</td>
+                          <td style={{...td,width:80,color:r.status==="Cliente"?C.green:C.orange,fontSize:11,fontWeight:500}}>{r.status}</td>
+                          <td style={{...td,width:70}}>
+                            <span style={{background:r.base==="target"?"rgba(99,102,241,0.1)":"rgba(22,163,74,0.1)",color:r.base==="target"?"#6366F1":C.green,borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${r.base==="target"?"#6366F1":C.green}`,display:"inline-block"}}>
+                              {r.base==="target"?"TARGET":"ATIVA"}
+                            </span>
+                          </td>
+                          <td style={{...td,fontSize:11,color:C.dim}}>{r.justificativa}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            {selEvs.length>0&&<span style={{background:C.orange,color:"#000",borderRadius:20,padding:"1px 9px",fontSize:11,fontWeight:700}}>{selEvs.length}</span>}
-            {selEvs.length>0&&<button onClick={()=>setSelEvs([])} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:5,padding:"5px 10px",color:"#CCC",cursor:"pointer",fontSize:11}}>Limpar</button>}
-            {demoMode&&<button onClick={()=>{setDemoMode(false);setRawEmpresas([]);setRawDeals([]);setRawContatos([]);setRawCustos([]);setSelEvs([]);setLoading(false);}} style={{background:"rgba(255,165,0,0.1)",border:`1px solid ${C.orange}`,borderRadius:5,padding:"5px 10px",color:C.orange,cursor:"pointer",fontSize:11}}>Sair do demo</button>}
-            {win&&<div style={{background:"rgba(255,165,0,0.06)",border:`1px solid rgba(255,165,0,0.15)`,borderRadius:5,padding:"5px 10px",fontSize:11,color:"#EEE",display:"flex",gap:5,alignItems:"center"}}><span>📅</span><span style={{color:"#AAA"}}><b style={{color:C.orange}}>Janela:</b> {win.s.toLocaleDateString("pt-BR")} → {win.e.toLocaleDateString("pt-BR")}</span></div>}
-          </div>
-        </div>
-        <div style={{maxWidth:1440,margin:"0 auto",padding:"0 22px",display:"flex",borderBottom:`1px solid ${C.border}`}}>
-          {["Event Dashboard","Performance Dashboard","Comparativo de Eventos","🔍 Search"].map((t,i)=>(
-            <button key={i} onClick={()=>setTab(i)} style={{padding:"10px 20px",cursor:"pointer",fontSize:12,fontWeight:tab===i?600:400,color:tab===i?C.orange:"#444",borderBottom:tab===i?`2px solid ${C.orange}`:"2px solid transparent",background:"transparent",border:"none",fontFamily:FONT,transition:"color 0.15s"}}>
-              {t}
-            </button>
-          ))}
+          )}
         </div>
       </div>
-      <div style={{maxWidth:1440,margin:"0 auto",padding:"18px 22px 48px"}}>
-        {!selEvs.length?(
-          <div style={{...card,padding:"56px 24px",textAlign:"center"}}>
-            <div style={{fontSize:32,marginBottom:10}}>🎯</div>
-            <div style={{fontSize:14,color:C.orange,fontWeight:600,marginBottom:6}}>Selecione um ou mais eventos para começar</div>
-            <div style={{fontSize:12,color:C.muted,marginBottom:16}}>Use o seletor acima para escolher os eventos que deseja analisar</div>
-            <div style={{fontSize:11,color:C.muted,marginBottom:20}}>{allEvs.length} eventos · {rawEmpresas.length} empresas · {rawDeals.length} deals</div>
-            {!demoMode&&(
-              <button onClick={loadDemo} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:6,padding:"8px 18px",color:C.muted,fontSize:11,cursor:"pointer",fontFamily:FONT}}>
-                🧪 Carregar dados demo
-              </button>
-            )}
-          </div>
-        ):(
-          <>
-            {tab===0&&<Tab1/>}
-            {tab===1&&<Tab2/>}
-            {tab===2&&<Tab3/>}
-            {tab===3&&<Tab4/>}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+    );
+  };
+
+
+  if (loading) return (
