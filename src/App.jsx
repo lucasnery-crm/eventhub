@@ -11,12 +11,13 @@ async function fetchSheet(sheet) {
 
 
 const C = {
-  bg:"#0F0F0F", surface:"#171717", card:"#1C1C1C", border:"#282828",
+  bg:"#F5F5F0", surface:"#FFFFFF", card:"#FFFFFF", border:"#E2E2DC",
   orange:"#FFA500", tart:"#FC4645", crayola:"#FE842B",
-  green:"#22C55E", text:"#DEDEDE", dim:"#888", muted:"#444",
+  green:"#16A34A", text:"#1A1A1A", dim:"#555", muted:"#999",
+  headerBg:"#1A1A1A", headerText:"#FFFFFF",
 };
-const TIER_C = {"0":"#FFA500","1":"#FE842B","2":"#FC4645","3":"#A855F7","4":"#555","":"#333"};
-const SEG_C  = ["#FFA500","#FE842B","#FC4645","#FFD166","#A855F7","#22C55E","#38BDF8","#FB7185"];
+const TIER_C = {"0":"#FFA500","1":"#FE842B","2":"#FC4645","3":"#A855F7","4":"#888","":"#CCC"};
+const SEG_C  = ["#FFA500","#FE842B","#FC4645","#FFD166","#A855F7","#16A34A","#38BDF8","#FB7185"];
 const T_ORD  = ["0","1","2","3","4",""];
 const FONT   = "'Roboto', sans-serif";
 
@@ -49,10 +50,64 @@ function tSort(a,b){
 
 const Trunc = ({s,n=26}) => { const t=s||"—"; return <span title={t}>{t.length>n?t.slice(0,n)+"…":t}</span>; };
 
+// ─── DEMO DATA ──────────────────────────────────────────────────────────────
+const DEMO_EMPRESAS = [
+  {company_id:"1",name:"Nike Brasil",tier_growth:"0",setor_picklist:"Moda",status_da_empresa__cliente:"true",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT;2025-10 EVENTO CERIMONIA KAITAI"},
+  {company_id:"2",name:"Arezzo & Co",tier_growth:"0",setor_picklist:"Moda",status_da_empresa__cliente:"true",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT;2025-03 EVENTO CRM MEET KOBE"},
+  {company_id:"3",name:"Natura &Co",tier_growth:"1",setor_picklist:"Beleza",status_da_empresa__cliente:"true",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT"},
+  {company_id:"4",name:"Magalu",tier_growth:"1",setor_picklist:"Varejo",status_da_empresa__cliente:"true",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT;2025-10 EVENTO CERIMONIA KAITAI"},
+  {company_id:"5",name:"Via Varejo",tier_growth:"1",setor_picklist:"Varejo",status_da_empresa__cliente:"false",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT"},
+  {company_id:"6",name:"Renner",tier_growth:"2",setor_picklist:"Moda",status_da_empresa__cliente:"false",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT"},
+  {company_id:"7",name:"Riachuelo",tier_growth:"2",setor_picklist:"Moda",status_da_empresa__cliente:"false",eventos__picklist_de_presenca:"2025-10 EVENTO CERIMONIA KAITAI"},
+  {company_id:"8",name:"Centauro",tier_growth:"2",setor_picklist:"Esportes",status_da_empresa__cliente:"true",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT"},
+  {company_id:"9",name:"Netshoes",tier_growth:"3",setor_picklist:"Esportes",status_da_empresa__cliente:"false",eventos__picklist_de_presenca:"2025-10 EVENTO CERIMONIA KAITAI"},
+  {company_id:"10",name:"Hering",tier_growth:"3",setor_picklist:"Moda",status_da_empresa__cliente:"false",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT"},
+  {company_id:"11",name:"Grupo Soma",tier_growth:"1",setor_picklist:"Moda",status_da_empresa__cliente:"true",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT;2025-03 EVENTO CRM MEET KOBE"},
+  {company_id:"12",name:"Dafiti",tier_growth:"2",setor_picklist:"Moda",status_da_empresa__cliente:"false",eventos__picklist_de_presenca:"2025-08 EVENTO VAREJO SUMMIT"},
+];
+
+const DEMO_DEALS = [
+  {deal_id:"d1",company_id:"1",dealname:"Nike | Giftback | New Logo",amount:"45000",pipeline:"pip1",dealstage:"st1",data_real:"9/15/2025",lista_origem_picklist:"2025-08 EVENTO VAREJO SUMMIT",createdate:"7/1/2025"},
+  {deal_id:"d2",company_id:"2",dealname:"Arezzo | CRMBonus | Expansão",amount:"32000",pipeline:"pip1",dealstage:"st2",data_real:"10/3/2025",lista_origem_picklist:"2025-08 EVENTO VAREJO SUMMIT",createdate:"8/5/2025"},
+  {deal_id:"d3",company_id:"3",dealname:"Natura | Vale Bonus | New L...",amount:"28000",pipeline:"pip2",dealstage:"st1",data_real:"9/22/2025",lista_origem_picklist:"2025-08 EVENTO VAREJO SUMMIT",createdate:"8/12/2025"},
+  {deal_id:"d4",company_id:"4",dealname:"Magalu | Giftback | Renovação",amount:"67000",pipeline:"pip1",dealstage:"st3",data_real:"10/10/2025",lista_origem_picklist:"2025-08 EVENTO VAREJO SUMMIT",createdate:"7/20/2025"},
+  {deal_id:"d5",company_id:"5",dealname:"Via Varejo | CRMBonus | Up",amount:"18000",pipeline:"pip2",dealstage:"st2",data_real:"11/5/2025",lista_origem_picklist:"",createdate:"8/1/2025"},
+  {deal_id:"d6",company_id:"6",dealname:"Renner | Loyalty | Piloto",amount:"12000",pipeline:"pip1",dealstage:"st1",data_real:"10/18/2025",lista_origem_picklist:"",createdate:"9/1/2025"},
+  {deal_id:"d7",company_id:"11",dealname:"Grupo Soma | Giftback | Escala",amount:"55000",pipeline:"pip1",dealstage:"st2",data_real:"9/8/2025",lista_origem_picklist:"2025-08 EVENTO VAREJO SUMMIT",createdate:"7/15/2025"},
+  {deal_id:"d8",company_id:"7",dealname:"Riachuelo | CRM | New Logo",amount:"22000",pipeline:"pip2",dealstage:"st1",data_real:"11/20/2025",lista_origem_picklist:"2025-10 EVENTO CERIMONIA KAITAI",createdate:"9/5/2025"},
+  {deal_id:"d9",company_id:"9",dealname:"Netshoes | Giftback | Teste",amount:"8500",pipeline:"pip1",dealstage:"st3",data_real:"12/1/2025",lista_origem_picklist:"2025-10 EVENTO CERIMONIA KAITAI",createdate:"10/1/2025"},
+];
+
+const DEMO_CONTATOS = [
+  {contact_id:"c1",company_id:"1",firstname:"João",lastname:"Silva",email:"joao@nike.com.br",jobtitle:"Diretor Comercial",eventos__convidado:"2025-08 EVENTO VAREJO SUMMIT",eventos__participou:"2025-08 EVENTO VAREJO SUMMIT"},
+  {contact_id:"c2",company_id:"1",firstname:"Ana",lastname:"Costa",email:"ana@nike.com.br",jobtitle:"Gerente de Marketing",eventos__convidado:"2025-08 EVENTO VAREJO SUMMIT",eventos__participou:"2025-08 EVENTO VAREJO SUMMIT"},
+  {contact_id:"c3",company_id:"2",firstname:"Pedro",lastname:"Mendes",email:"pedro@arezzo.com.br",jobtitle:"VP Comercial",eventos__convidado:"2025-08 EVENTO VAREJO SUMMIT",eventos__participou:"2025-08 EVENTO VAREJO SUMMIT"},
+  {contact_id:"c4",company_id:"3",firstname:"Carla",lastname:"Andrade",email:"carla@natura.net",jobtitle:"Head de CRM",eventos__convidado:"2025-08 EVENTO VAREJO SUMMIT",eventos__participou:""},
+  {contact_id:"c5",company_id:"4",firstname:"Roberto",lastname:"Lima",email:"roberto@magalu.com",jobtitle:"Diretor de Fidelidade",eventos__convidado:"2025-08 EVENTO VAREJO SUMMIT",eventos__participou:"2025-08 EVENTO VAREJO SUMMIT"},
+  {contact_id:"c6",company_id:"7",firstname:"Marina",lastname:"Rocha",email:"marina@riachuelo.com.br",jobtitle:"Gerente Comercial",eventos__convidado:"2025-10 EVENTO CERIMONIA KAITAI",eventos__participou:"2025-10 EVENTO CERIMONIA KAITAI"},
+  {contact_id:"c7",company_id:"11",firstname:"Lucas",lastname:"Ferreira",email:"lucas@gruposoma.com",jobtitle:"CEO",eventos__convidado:"2025-08 EVENTO VAREJO SUMMIT",eventos__participou:"2025-08 EVENTO VAREJO SUMMIT"},
+];
+
+const DEMO_CUSTOS = [
+  {evento:"2025-08 EVENTO VAREJO SUMMIT", custo:"85000"},
+  {evento:"2025-10 EVENTO CERIMONIA KAITAI", custo:"42000"},
+  {evento:"2025-03 EVENTO CRM MEET KOBE", custo:"15000"},
+];
+
+const DEMO_DEPARA = [
+  {pipeline_id:"pip1",pipeline_name:"Giftback"},
+  {pipeline_id:"pip2",pipeline_name:"CRMBonus"},
+  {pipeline_stage:"st1",stage_name:"SQL"},
+  {pipeline_stage:"st2",stage_name:"SAL"},
+  {pipeline_stage:"st3",stage_name:"Proposta Enviada"},
+];
+
+
 export default function App() {
   const [rawEmpresas, setRawEmpresas] = useState([]);
   const [rawDeals, setRawDeals] = useState([]);
   const [rawContatos, setRawContatos] = useState([]);
+  const [rawCustos, setRawCustos] = useState([]);
   const [dpMap, setDpMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadMsg, setLoadMsg] = useState("Carregando...");
@@ -60,8 +115,15 @@ export default function App() {
   const [selEvs, setSelEvs] = useState([]);
   const [tab, setTab] = useState(0);
   const [q, setQ] = useState("");
+  const [searchQ, setSearchQ] = useState("");
   const [open, setOpen] = useState(false);
   const [expandedEmp, setExpandedEmp] = useState(null);
+  const [demoMode, setDemoMode] = useState(false);
+  const [authed, setAuthed] = useState(()=>!!sessionStorage.getItem("eh_user"));
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [loginErr, setLoginErr] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
   const ref = useRef(null);
 
   useEffect(()=>{
@@ -76,8 +138,18 @@ export default function App() {
         setLoadMsg("Carregando de-para...");
         const dp = await fetchSheet("de_para");
         setLoadMsg("Carregando contatos...");
-        const contatos = await fetchSheet("contatos");
-        setRawContatos(contatos);
+        try {
+          const contatos = await fetchSheet("contatos");
+          setRawContatos(Array.isArray(contatos) ? contatos : []);
+        } catch(e) {
+          setRawContatos([]);
+        }
+        try {
+          const custos = await fetchSheet("custos");
+          setRawCustos(Array.isArray(custos) ? custos : []);
+        } catch(e) {
+          setRawCustos([]);
+        }
         const m={};
         dp.forEach(r=>{
           if(r.pipeline_stage&&r.stage_name) m[r.pipeline_stage]=r.stage_name;
@@ -97,6 +169,51 @@ export default function App() {
     document.addEventListener("mousedown",h);
     return ()=>document.removeEventListener("mousedown",h);
   },[]);
+
+  const loadDemo = () => {
+    setRawEmpresas(DEMO_EMPRESAS);
+    setRawDeals(DEMO_DEALS);
+    setRawContatos(DEMO_CONTATOS);
+    setRawCustos(DEMO_CUSTOS);
+    const m={};
+    DEMO_DEPARA.forEach(r=>{
+      if(r.pipeline_stage&&r.stage_name) m[r.pipeline_stage]=r.stage_name;
+      if(r.pipeline_id&&r.pipeline_name) m[r.pipeline_id]=r.pipeline_name;
+    });
+    setDpMap(m);
+    setDemoMode(true);
+    setLoading(false);
+  };
+
+  const handleLogin = async(e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginErr("");
+    try {
+      const res = await fetch("/api/auth", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({email:loginEmail.trim(), password:loginPass})
+      });
+      const data = await res.json();
+      if(data.ok) {
+        sessionStorage.setItem("eh_user", data.email);
+        setAuthed(true);
+      } else {
+        setLoginErr(data.error || "Erro ao autenticar");
+      }
+    } catch(err) {
+      setLoginErr("Erro de conexão");
+    }
+    setLoginLoading(false);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("eh_user");
+    setAuthed(false);
+    setLoginEmail("");
+    setLoginPass("");
+  };
 
   const dp = useCallback(v=>(!v?"":dpMap[v]||v), [dpMap]);
 
@@ -165,6 +282,29 @@ export default function App() {
     return m;
   },[rawEmpresas]);
 
+  // Map evento -> custo
+  const custoMap = useMemo(()=>{
+    const m={};
+    rawCustos.forEach(r=>{ if(r.evento) m[r.evento.trim()]=fAmt(r.custo); });
+    return m;
+  },[rawCustos]);
+
+  // Projeção de receita: MRR × meses restantes até dez + MRR × 12 × 50% (ano 2)
+  function calcProjecao(deal) {
+    const mrr = fAmt(deal.amount);
+    if(!mrr) return 0;
+    const created = parseReal(deal.createdate);
+    if(!created) return 0;
+    const fechamento = new Date(created.getTime() + 120*24*60*60*1000);
+    const hoje = new Date();
+    const refDate = fechamento > hoje ? fechamento : hoje;
+    const dezembro = new Date(refDate.getFullYear(), 11, 31);
+    const mesesRestantes = Math.max(0, Math.round((dezembro - refDate) / (30.44*24*60*60*1000)));
+    const ano1 = mrr * mesesRestantes;
+    const ano2 = mrr * 12 * 0.5;
+    return ano1 + ano2;
+  }
+
   const dealsInf = useMemo(()=>{
     if(!selEvs.length||!win)return [];
     const seen=new Map();
@@ -209,9 +349,14 @@ export default function App() {
   const kpD = useMemo(()=>{
     const ri=dealsInf.reduce((s,r)=>s+fAmt(r.amount),0);
     const rd=dealsDir.reduce((s,r)=>s+fAmt(r.amount),0);
+    const custoTotal=selEvs.reduce((s,ev)=>s+(custoMap[ev]||0),0);
+    const roi=custoTotal>0?rd/custoTotal:null;
+    const cac=dealsDir.length>0&&custoTotal>0?custoTotal/dealsDir.length:null;
+    const projecao=dealsDir.reduce((s,r)=>s+calcProjecao(r),0);
     return {ni:dealsInf.length,ri,ti:dealsInf.length?ri/dealsInf.length:0,
-            nd:dealsDir.length,rd,td:dealsDir.length?rd/dealsDir.length:0};
-  },[dealsInf,dealsDir]);
+            nd:dealsDir.length,rd,td:dealsDir.length?rd/dealsDir.length:0,
+            custoTotal,roi,cac,projecao};
+  },[dealsInf,dealsDir,selEvs,custoMap]);
 
   const calcEv = useCallback(ev=>{
     const m=ev.match(/^(\d{4})-(\d{2})/);
@@ -287,25 +432,27 @@ export default function App() {
   const donD  = [{name:"Prospects",value:kpE.pros,color:C.orange},{name:"Clientes",value:kpE.cli,color:C.green}].filter(d=>d.value>0);
 
   // ─── SHARED STYLES ──────────────────────────────────────────────────────────
-  const hdr  = {background:"#111",borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,zIndex:100};
-  const card = {background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"14px 16px"};
-  const th   = {padding:"7px 10px",fontSize:10,letterSpacing:0.8,color:"#555",borderBottom:`1px solid ${C.border}`,background:"#161616",textTransform:"uppercase",whiteSpace:"nowrap"};
-  const td   = {padding:"7px 10px",fontSize:12,borderBottom:`1px solid #1E1E1E`,color:C.dim,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:0};
-  const kLbl = {fontSize:10,color:"#555",letterSpacing:0.8,textTransform:"uppercase",marginBottom:4};
-  const sTit = {fontSize:10,color:"#444",letterSpacing:0.8,textTransform:"uppercase",marginBottom:8};
+  const hdr  = {background:C.headerBg,borderBottom:`3px solid ${C.orange}`,position:"sticky",top:0,zIndex:100};
+  const card = {background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"14px 16px",boxShadow:"0 1px 3px rgba(0,0,0,0.06)"};
+  const th   = {padding:"8px 12px",fontSize:10,letterSpacing:0.8,color:"#888",borderBottom:`1px solid ${C.border}`,background:"#FAFAF8",textTransform:"uppercase",whiteSpace:"nowrap"};
+  const td   = {padding:"8px 12px",fontSize:12,borderBottom:`1px solid ${C.border}`,color:C.dim,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"};
+  const kLbl = {fontSize:10,color:"#999",letterSpacing:0.8,textTransform:"uppercase",marginBottom:4};
+  const sTit = {fontSize:10,color:"#999",letterSpacing:0.8,textTransform:"uppercase",marginBottom:8};
 
-  const TB = ({row,rank}) => {
+  const TB = ({row,rank,showProj}) => {
     const t=empTierMap[row.company_id]||row.tier_growth||"";
-    const tb={background:`${TIER_C[t]||"#333"}18`,color:TIER_C[t]||"#555",borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${TIER_C[t]||"#333"}30`,display:"inline-block"};
+    const tb={background:`${TIER_C[t]||"#EEE"}30`,color:TIER_C[t]||"#999",borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${TIER_C[t]||"#DDD"}`,display:"inline-block"};
+    const proj=showProj?calcProjecao(row):null;
     return (
-      <tr style={{background:rank%2===0?"rgba(255,255,255,0.015)":"transparent"}}>
-        <td style={{...td,width:24,color:"#333",fontSize:11,textAlign:"right"}}>{rank}</td>
-        <td style={{...td,color:C.text}}><Trunc s={row.dealname} n={26}/></td>
-        <td style={{...td,width:40}}><span style={tb}>{tl(t)}</span></td>
-        <td style={{...td,color:C.green,fontWeight:600,width:110,fontVariantNumeric:"tabular-nums"}}>{fBRL(fAmt(row.amount))}</td>
-        <td style={{...td,width:96}}><Trunc s={dp(row.pipeline)} n={13}/></td>
-        <td style={{...td,width:96}}><Trunc s={dp(row.dealstage)} n={13}/></td>
-        <td style={{...td,width:82,color:"#444",fontSize:11}}>{fDate(row.data_real)}</td>
+      <tr style={{background:rank%2===0?"rgba(0,0,0,0.02)":"transparent"}}>
+        <td style={{...td,width:24,color:"#CCC",fontSize:11,textAlign:"right",flexShrink:0}}>{rank}</td>
+        <td style={{...td,color:C.text,minWidth:0,maxWidth:"none"}} title={row.dealname}>{row.dealname||"—"}</td>
+        <td style={{...td,width:40,flexShrink:0}}><span style={tb}>{tl(t)}</span></td>
+        <td style={{...td,color:C.green,fontWeight:600,width:96,flexShrink:0,fontVariantNumeric:"tabular-nums"}}>{fBRL(fAmt(row.amount))}</td>
+        {showProj&&<td style={{...td,color:C.orange,fontWeight:600,width:110,flexShrink:0,fontVariantNumeric:"tabular-nums"}}>{fBRL(proj)}</td>}
+        <td style={{...td,width:96,flexShrink:0}}><Trunc s={dp(row.pipeline)} n={13}/></td>
+        <td style={{...td,width:96,flexShrink:0}}><Trunc s={dp(row.dealstage)} n={13}/></td>
+        <td style={{...td,width:82,color:"#AAA",fontSize:11,flexShrink:0}}>{fDate(row.data_real)}</td>
       </tr>
     );
   };
@@ -341,11 +488,11 @@ export default function App() {
         <div style={card}>
           <div style={sTit}>EMPRESAS POR SEGMENTO</div>
           <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={segD} layout="vertical" margin={{left:0,right:8}}>
-              <XAxis type="number" tick={{fill:"#333",fontSize:9}} axisLine={false} tickLine={false}/>
-              <YAxis dataKey="n" type="category" tick={{fill:"#555",fontSize:10}} axisLine={false} tickLine={false} width={88}/>
-              <Tooltip contentStyle={tt} cursor={{fill:"rgba(255,255,255,0.02)"}}/>
-              <Bar dataKey="v" radius={[0,3,3,0]}>{segD.map((_,i)=><Cell key={i} fill={SEG_C[i%SEG_C.length]}/>)}</Bar>
+            <BarChart data={segD} margin={{left:-10,right:4}}>
+              <XAxis dataKey="n" tick={{fill:"#888",fontSize:9}} axisLine={false} tickLine={false}/>
+              <YAxis tick={{fill:"#CCC",fontSize:9}} axisLine={false} tickLine={false}/>
+              <Tooltip contentStyle={tt} cursor={{fill:"rgba(0,0,0,0.04)"}}/>
+              <Bar dataKey="v" radius={[3,3,0,0]}>{segD.map((_,i)=><Cell key={i} fill={SEG_C[i%SEG_C.length]}/>)}</Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -392,7 +539,7 @@ export default function App() {
                   </tr>
                   {isExp&&(
                     <tr key={`exp-${i}`}>
-                      <td colSpan={5} style={{padding:0,background:"#141414",borderBottom:`1px solid ${C.border}`}}>
+                      <td colSpan={5} style={{padding:0,background:"#FAFAF8",borderBottom:`1px solid ${C.border}`}}>
                         <div style={{padding:"12px 16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
 
                           {/* CONTATOS */}
@@ -471,12 +618,12 @@ export default function App() {
     <div>
       <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:10,marginBottom:14,alignItems:"stretch"}}>
         {/* Score Ball */}
-        <div style={{background:"linear-gradient(135deg,#1A1200,#111)",border:`1px solid rgba(255,165,0,0.2)`,borderRadius:8,padding:"16px 20px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minWidth:110}}>
-          <div style={{fontSize:9,color:"#444",letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>SCORE</div>
-          <div style={{width:72,height:72,borderRadius:"50%",border:`3px solid ${C.orange}`,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,165,0,0.05)"}}>
+        <div style={{...card,padding:"16px 20px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minWidth:110,borderTop:`3px solid ${C.orange}`}}>
+          <div style={{fontSize:9,color:C.muted,letterSpacing:1.5,textTransform:"uppercase",marginBottom:6}}>SCORE</div>
+          <div style={{width:72,height:72,borderRadius:"50%",border:`3px solid ${C.orange}`,display:"flex",alignItems:"center",justifyContent:"center",background:`rgba(255,165,0,0.05)`}}>
             <span style={{fontSize:26,fontWeight:700,color:C.orange,fontVariantNumeric:"tabular-nums"}}>{single?single.score:"—"}</span>
           </div>
-          <div style={{fontSize:9,color:"#444",marginTop:6}}>/100</div>
+          <div style={{fontSize:9,color:C.muted,marginTop:6}}>/100</div>
         </div>
         {/* Big KPIs */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
@@ -486,12 +633,26 @@ export default function App() {
             {l:"RECEITA INFLUENC.", v:fBRL(kpD.ri), c:C.crayola},
             {l:"NEGÓCIOS INFLUENC.",v:fNum(kpD.ni), c:C.crayola},
           ].map((k,i)=>(
-            <div key={i} style={{...card,borderLeft:`3px solid ${k.c}`,padding:"12px 14px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
-              <div style={{fontSize:9,color:"#444",letterSpacing:0.8,textTransform:"uppercase",marginBottom:5}}>{k.l}</div>
+            <div key={i} style={{...card,borderLeft:`3px solid ${k.c}`,padding:"8px 12px",display:"flex",flexDirection:"column",justifyContent:"center",minHeight:0}}>
+              <div style={{fontSize:9,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:5}}>{k.l}</div>
               <div style={{fontSize:20,fontWeight:700,color:k.c,fontVariantNumeric:"tabular-nums",lineHeight:1}}>{k.v}</div>
             </div>
           ))}
         </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:14}}>
+        {[
+          {l:"CUSTO DO EVENTO",   v:kpD.custoTotal?fBRL(kpD.custoTotal):"Sem custo", c:"#6366F1"},
+          {l:"ROI",               v:kpD.roi!=null?kpD.roi.toFixed(2)+"x":"—",        c:kpD.roi>=1?C.green:C.tart, sub:"Receita Dir. / Custo"},
+          {l:"CAC",               v:kpD.cac!=null?fBRL(kpD.cac):"—",                c:C.orange,  sub:"Custo / Qtd Negócios Dir."},
+          {l:"PROJEÇÃO RECEITA",  v:fBRL(kpD.projecao),                              c:"#8B5CF6", sub:"MRR × meses restantes + ano 2"},
+        ].map((k,i)=>(
+          <div key={i} style={{...card,borderLeft:`3px solid ${k.c}`,padding:"12px 14px"}}>
+            <div style={{fontSize:9,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:5}}>{k.l}</div>
+            <div style={{fontSize:20,fontWeight:700,color:k.c,fontVariantNumeric:"tabular-nums",lineHeight:1.1}}>{k.v}</div>
+            {k.sub&&<div style={{fontSize:9,color:C.muted,marginTop:4}}>{k.sub}</div>}
+          </div>
+        ))}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
         {[
@@ -515,27 +676,28 @@ export default function App() {
           </div>
         ))}
       </div>
-      {[{title:"TOP 10 — NEGÓCIOS ORIGEM DIRETA",data:t10d},{title:"TOP 10 — NEGÓCIOS INFLUENCIADOS",data:t10i}].map(({title,data},ti)=>(
-        <div key={ti} style={{marginBottom:16}}>
-          <div style={sTit}>{title}</div>
-          <div style={{...card,padding:0,overflow:"hidden"}}>
-            <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
-              <colgroup><col style={{width:24}}/><col/><col style={{width:40}}/><col style={{width:110}}/><col style={{width:96}}/><col style={{width:96}}/><col style={{width:82}}/></colgroup>
-              <thead><tr>
-                <th style={{...th,textAlign:"right"}}>#</th>
-                <th style={{...th,textAlign:"left"}}>DEAL</th>
-                <th style={{...th,textAlign:"left"}}>T</th>
-                <th style={{...th,textAlign:"left"}}>VALOR</th>
-                <th style={{...th,textAlign:"left"}}>PIPELINE</th>
-                <th style={{...th,textAlign:"left"}}>FASE</th>
-                <th style={{...th,textAlign:"left"}}>DATA</th>
-              </tr></thead>
-              <tbody>{data.map((row,i)=><TB key={i} row={row} rank={i+1}/>)}</tbody>
-            </table>
-            {!data.length&&<div style={{padding:"18px",textAlign:"center",color:"#333",fontSize:12}}>Nenhum negócio encontrado</div>}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+        {[{title:"TOP 10 — ORIGEM DIRETA",data:t10d,showProj:true},{title:"TOP 10 — INFLUENCIADOS",data:t10i,showProj:false}].map(({title,data,showProj},ti)=>(
+          <div key={ti}>
+            <div style={sTit}>{title}</div>
+            <div style={{...card,padding:0,overflow:"hidden"}}>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead><tr>
+                  <th style={{...th,textAlign:"right",width:24}}>#</th>
+                  <th style={{...th,textAlign:"left"}}>DEAL</th>
+                  <th style={{...th,textAlign:"left",width:36}}>T</th>
+                  <th style={{...th,textAlign:"left",width:80}}>MRR</th>
+                  {showProj&&<th style={{...th,textAlign:"left",width:90}}>PROJEÇÃO</th>}
+                  <th style={{...th,textAlign:"left",width:72}}>FASE</th>
+                  <th style={{...th,textAlign:"left",width:74}}>DATA</th>
+                </tr></thead>
+                <tbody>{data.map((row,i)=><TB key={i} row={row} rank={i+1} showProj={showProj}/>)}</tbody>
+              </table>
+              {!data.length&&<div style={{padding:"18px",textAlign:"center",color:C.muted,fontSize:12}}>Nenhum negócio encontrado</div>}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 
@@ -543,7 +705,7 @@ export default function App() {
     if(selEvs.length<2) return (
       <div style={{...card,padding:"56px 24px",textAlign:"center"}}>
         <div style={{fontSize:28,marginBottom:10}}>📊</div>
-        <div style={{fontSize:13,color:"#444"}}>Selecione 2 ou mais eventos para comparar.</div>
+        <div style={{fontSize:13,color:C.muted}}>Selecione 2 ou mais eventos para comparar.</div>
       </div>
     );
     const ranked=Object.entries(perEv).sort((a,b)=>b[1].score-a[1].score);
@@ -622,36 +784,219 @@ export default function App() {
     );
   };
 
+  const Tab4 = ()=>{
+    const lq = searchQ.toLowerCase();
+    const empResults = useMemo(()=>{
+      if(!lq) return rawEmpresas.slice(0,50);
+      return rawEmpresas.filter(r=>
+        (r.name||"").toLowerCase().includes(lq) ||
+        (r.setor_picklist||"").toLowerCase().includes(lq)
+      ).slice(0,50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[searchQ, rawEmpresas]);
+
+    const contResults = useMemo(()=>{
+      if(!lq) return rawContatos.slice(0,50);
+      return rawContatos.filter(r=>{
+        const nome = ((r.firstname||"")+" "+(r.lastname||"")).toLowerCase();
+        return nome.includes(lq) || (r.email||"").toLowerCase().includes(lq) || (r.jobtitle||"").toLowerCase().includes(lq);
+      }).slice(0,50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    },[searchQ, rawContatos]);
+
+    return (
+      <div>
+        <div style={{marginBottom:16}}>
+          <input
+            value={searchQ}
+            onChange={e=>setSearchQ(e.target.value)}
+            placeholder="Buscar empresa ou contato..."
+            style={{width:"100%",padding:"10px 14px",fontSize:13,border:`1px solid ${C.border}`,borderRadius:8,outline:"none",background:C.surface,color:C.text,boxSizing:"border-box",boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}
+          />
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          {/* EMPRESAS */}
+          <div>
+            <div style={sTit}>EMPRESAS ({empResults.length}{rawEmpresas.length>50&&!lq?"+":""})</div>
+            <div style={{...card,padding:0,overflow:"hidden"}}>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead><tr>
+                  <th style={{...th,textAlign:"left"}}></th>
+                  <th style={{...th,textAlign:"left"}}>EMPRESA</th>
+                  <th style={{...th,textAlign:"left",width:48}}>TIER</th>
+                  <th style={{...th,textAlign:"left",width:72}}>STATUS</th>
+                </tr></thead>
+                <tbody>
+                  {empResults.map((r,i)=>{
+                    const t=r.tier_growth||"";
+                    const tb={background:`${TIER_C[t]||"#EEE"}30`,color:TIER_C[t]||"#999",borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${TIER_C[t]||"#DDD"}`,display:"inline-block"};
+                    const isExp=expandedEmp===("s_"+r.company_id);
+                    const hist=historicoEmpresa[r.company_id]||[];
+                    const cts=(rawContatos.filter(c=>c.company_id===r.company_id));
+                    return (
+                      <>
+                        <tr key={i} onClick={()=>setExpandedEmp(isExp?null:("s_"+r.company_id))} style={{cursor:"pointer",background:isExp?"rgba(255,165,0,0.04)":i%2===0?"rgba(0,0,0,0.02)":"transparent"}}>
+                          <td style={{...td,width:24,color:"#CCC",fontSize:10,textAlign:"center"}}>{isExp?"▼":"▶"}</td>
+                          <td style={{...td,color:C.text,fontWeight:isExp?500:400}}>{r.name||"—"}</td>
+                          <td style={td}><span style={tb}>{tl(t)}</span></td>
+                          <td style={{...td,color:r.status_da_empresa__cliente?.toLowerCase()==="true"?C.green:C.dim,width:72}}>{r.status_da_empresa__cliente?.toLowerCase()==="true"?"Cliente":"Prospect"}</td>
+                        </tr>
+                        {isExp&&(
+                          <tr key={"exp_"+i}>
+                            <td colSpan={4} style={{padding:0,background:"#FAFAF8",borderBottom:`1px solid ${C.border}`}}>
+                              <div style={{padding:"12px 16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+                                <div>
+                                  <div style={{fontSize:9,color:C.orange,letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:600}}>📅 Histórico de Eventos ({hist.length})</div>
+                                  {hist.length===0?<div style={{fontSize:11,color:C.muted}}>Sem histórico</div>:(
+                                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                                      {[...hist].sort().reverse().map((ev,ei)=>(
+                                        <div key={ei} style={{fontSize:11,color:C.dim,display:"flex",alignItems:"center",gap:6}}>
+                                          <span style={{width:5,height:5,borderRadius:"50%",background:C.orange,flexShrink:0,display:"inline-block"}}/>
+                                          {ev}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <div style={{fontSize:9,color:C.crayola,letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:600}}>👤 Contatos ({cts.length})</div>
+                                  {cts.length===0?<div style={{fontSize:11,color:C.muted}}>Nenhum contato</div>:(
+                                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                                      {cts.map((c,ci)=>(
+                                        <div key={ci} style={{fontSize:11,color:C.dim}}>
+                                          {[c.firstname,c.lastname].filter(Boolean).join(" ")||"—"}
+                                          {c.jobtitle&&<span style={{color:C.muted,fontSize:10}}> · {c.jobtitle}</span>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {!empResults.length&&<div style={{padding:"18px",textAlign:"center",color:C.muted,fontSize:12}}>Nenhuma empresa encontrada</div>}
+            </div>
+          </div>
+
+          {/* CONTATOS */}
+          <div>
+            <div style={sTit}>CONTATOS ({contResults.length}{rawContatos.length>50&&!lq?"+":""})</div>
+            <div style={{...card,padding:0,overflow:"hidden"}}>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead><tr>
+                  <th style={{...th,textAlign:"left"}}>NOME</th>
+                  <th style={{...th,textAlign:"left"}}>CARGO</th>
+                  <th style={{...th,textAlign:"left",width:110}}>EMPRESA</th>
+                </tr></thead>
+                <tbody>
+                  {contResults.map((r,i)=>{
+                    const nome=[r.firstname,r.lastname].filter(Boolean).join(" ")||"—";
+                    const emp=rawEmpresas.find(e=>e.company_id===r.company_id);
+                    return (
+                      <tr key={i} style={{background:i%2===0?"rgba(0,0,0,0.02)":"transparent"}}>
+                        <td style={{...td,color:C.text}}>{nome}</td>
+                        <td style={td}><Trunc s={r.jobtitle||"—"} n={22}/></td>
+                        <td style={{...td,width:110,fontSize:11,color:C.dim}}><Trunc s={emp?.name||"—"} n={16}/></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {!contResults.length&&<div style={{padding:"18px",textAlign:"center",color:C.muted,fontSize:12}}>Nenhum contato encontrado</div>}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (!authed) return (
+    <div style={{background:"#1A1A1A",minHeight:"100vh",fontFamily:FONT,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+      <div style={{background:"#222",border:"1px solid #333",borderRadius:12,padding:"40px 36px",width:360,boxShadow:"0 24px 64px rgba(0,0,0,0.6)"}}>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{display:"inline-flex",alignItems:"center",gap:8,fontWeight:700,fontSize:20,color:"#FFF",marginBottom:6}}>
+            <div style={{background:C.orange,borderRadius:6,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#000"}}>⚡</div>
+            Event<span style={{color:C.orange}}>Hub</span>
+          </div>
+          <div style={{fontSize:11,color:"#555",letterSpacing:1.5,textTransform:"uppercase",marginTop:4}}>Acesso restrito</div>
+        </div>
+        <form onSubmit={handleLogin}>
+          <div style={{marginBottom:12}}>
+            <label style={{fontSize:10,color:"#666",letterSpacing:0.8,textTransform:"uppercase",display:"block",marginBottom:5}}>E-mail @crmbonus.com</label>
+            <input
+              type="email"
+              value={loginEmail}
+              onChange={e=>setLoginEmail(e.target.value)}
+              placeholder="seu.nome@crmbonus.com"
+              required
+              style={{width:"100%",background:"#2A2A2A",border:"1px solid #333",borderRadius:6,padding:"9px 12px",color:"#EEE",fontSize:13,outline:"none",boxSizing:"border-box"}}
+            />
+          </div>
+          <div style={{marginBottom:20}}>
+            <label style={{fontSize:10,color:"#666",letterSpacing:0.8,textTransform:"uppercase",display:"block",marginBottom:5}}>Senha</label>
+            <input
+              type="password"
+              value={loginPass}
+              onChange={e=>setLoginPass(e.target.value)}
+              placeholder="••••••••"
+              required
+              style={{width:"100%",background:"#2A2A2A",border:"1px solid #333",borderRadius:6,padding:"9px 12px",color:"#EEE",fontSize:13,outline:"none",boxSizing:"border-box"}}
+            />
+          </div>
+          {loginErr&&<div style={{background:"rgba(252,70,69,0.1)",border:"1px solid rgba(252,70,69,0.3)",borderRadius:6,padding:"8px 12px",fontSize:12,color:"#FC4645",marginBottom:14}}>{loginErr}</div>}
+          <button
+            type="submit"
+            disabled={loginLoading}
+            style={{width:"100%",background:C.orange,border:"none",borderRadius:6,padding:"10px",color:"#000",fontSize:13,fontWeight:700,cursor:loginLoading?"not-allowed":"pointer",fontFamily:FONT,opacity:loginLoading?0.7:1}}
+          >
+            {loginLoading?"Entrando...":"Entrar"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
   if (loading) return (
     <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:14}}>
       <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
       <div style={{width:36,height:36,border:`2px solid ${C.border}`,borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-      <span style={{fontSize:11,color:"#444",letterSpacing:1.5}}>{loadMsg.toUpperCase()}</span>
+      <span style={{fontSize:11,color:C.muted,letterSpacing:1.5}}>{loadMsg.toUpperCase()}</span>
       {loadErr&&<span style={{fontSize:12,color:C.tart,maxWidth:400,textAlign:"center"}}>{loadErr}</span>}
     </div>
   );
 
   return (
-    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,color:C.text,fontSize:13}}>
+    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,color:C.text,fontSize:13,fontSmoothing:"antialiased"}}>
       <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
       <div style={hdr}>
         <div style={{maxWidth:1440,margin:"0 auto",padding:"10px 22px"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{display:"flex",alignItems:"center",gap:9,fontWeight:700,fontSize:16,color:C.text}}>
+            <div style={{display:"flex",alignItems:"center",gap:9,fontWeight:700,fontSize:16,color:C.headerText}}>
               <div style={{background:C.orange,borderRadius:5,width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#000"}}>⚡</div>
               Event<span style={{color:C.orange}}>Hub</span>
+              {demoMode&&<span style={{background:"rgba(255,165,0,0.15)",color:C.orange,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:20,border:`1px solid ${C.orange}`,letterSpacing:1}}>DEMO</span>}
             </div>
-            <span style={{fontSize:9,color:"#333",letterSpacing:2}}>ANÁLISE ESTRATÉGICA DE EVENTOS</span>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <span style={{fontSize:9,color:"#AAA",letterSpacing:2}}>ANÁLISE ESTRATÉGICA DE EVENTOS</span>
+              <button onClick={handleLogout} style={{background:"transparent",border:"1px solid #333",borderRadius:4,padding:"3px 10px",color:"#666",fontSize:10,cursor:"pointer",fontFamily:FONT}}>Sair</button>
+            </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,flexWrap:"wrap"}}>
             <div style={{position:"relative"}} ref={ref}>
-              <div onClick={()=>setOpen(o=>!o)} style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:6,padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,minWidth:240,fontSize:12,color:C.text}}>
-                <span style={{flex:1,color:selEvs.length?C.text:"#444"}}>{selEvs.length?`${selEvs.length} evento${selEvs.length>1?"s":""} selecionado${selEvs.length>1?"s":""}`:"Selecionar eventos..."}</span>
+              <div onClick={()=>setOpen(o=>!o)} style={{background:"#2A2A2A",border:"1px solid #444",borderRadius:6,padding:"6px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,minWidth:240,fontSize:12,color:"#EEE"}}>
+                <span style={{flex:1,color:selEvs.length?"#EEE":"#777"}}>{selEvs.length?`${selEvs.length} evento${selEvs.length>1?"s":""} selecionado${selEvs.length>1?"s":""}`:"Selecionar eventos..."}</span>
                 <span style={{color:"#333",fontSize:9}}>{open?"▲":"▼"}</span>
               </div>
               {open&&(
-                <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,width:300,background:"#1A1A1A",border:`1px solid ${C.border}`,borderRadius:6,zIndex:300,maxHeight:240,overflowY:"auto",boxShadow:"0 12px 32px rgba(0,0,0,0.7)"}}>
-                  <input style={{width:"100%",background:C.bg,border:"none",borderBottom:`1px solid ${C.border}`,padding:"7px 12px",color:C.text,fontSize:12,outline:"none",boxSizing:"border-box"}} placeholder="Buscar..." value={q} onChange={e=>setQ(e.target.value)} autoFocus/>
+                <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,width:300,background:"#222",border:"1px solid #444",borderRadius:6,zIndex:300,maxHeight:240,overflowY:"auto",boxShadow:"0 12px 32px rgba(0,0,0,0.7)"}}>
+                  <input style={{width:"100%",background:"#1A1A1A",border:"none",borderBottom:"1px solid #333",padding:"7px 12px",color:"#EEE",fontSize:12,outline:"none",boxSizing:"border-box"}} placeholder="Buscar..." value={q} onChange={e=>setQ(e.target.value)} autoFocus/>
                   {filtEvs.length===0&&<div style={{padding:"12px",textAlign:"center",color:"#333",fontSize:12}}>{allEvs.length===0?"Nenhum evento":"Nenhum resultado"}</div>}
                   {filtEvs.map(ev=>(
                     <div key={ev} onClick={()=>tog(ev)} style={{padding:"7px 12px",cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",gap:7,background:selEvs.includes(ev)?"rgba(255,165,0,0.07)":"transparent",color:selEvs.includes(ev)?C.orange:"#666"}}>
@@ -665,12 +1010,13 @@ export default function App() {
               )}
             </div>
             {selEvs.length>0&&<span style={{background:C.orange,color:"#000",borderRadius:20,padding:"1px 9px",fontSize:11,fontWeight:700}}>{selEvs.length}</span>}
-            {selEvs.length>0&&<button onClick={()=>setSelEvs([])} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:5,padding:"5px 10px",color:"#444",cursor:"pointer",fontSize:11}}>Limpar</button>}
-            {win&&<div style={{background:"rgba(255,165,0,0.06)",border:`1px solid rgba(255,165,0,0.15)`,borderRadius:5,padding:"5px 10px",fontSize:11,color:C.orange,display:"flex",gap:5,alignItems:"center"}}><span>📅</span><span><b>Janela:</b> {win.s.toLocaleDateString("pt-BR")} → {win.e.toLocaleDateString("pt-BR")}</span></div>}
+            {selEvs.length>0&&<button onClick={()=>setSelEvs([])} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:5,padding:"5px 10px",color:"#CCC",cursor:"pointer",fontSize:11}}>Limpar</button>}
+            {demoMode&&<button onClick={()=>{setDemoMode(false);setRawEmpresas([]);setRawDeals([]);setRawContatos([]);setRawCustos([]);setSelEvs([]);setLoading(false);}} style={{background:"rgba(255,165,0,0.1)",border:`1px solid ${C.orange}`,borderRadius:5,padding:"5px 10px",color:C.orange,cursor:"pointer",fontSize:11}}>Sair do demo</button>}
+            {win&&<div style={{background:"rgba(255,165,0,0.06)",border:`1px solid rgba(255,165,0,0.15)`,borderRadius:5,padding:"5px 10px",fontSize:11,color:"#EEE",display:"flex",gap:5,alignItems:"center"}}><span>📅</span><span style={{color:"#AAA"}}><b style={{color:C.orange}}>Janela:</b> {win.s.toLocaleDateString("pt-BR")} → {win.e.toLocaleDateString("pt-BR")}</span></div>}
           </div>
         </div>
         <div style={{maxWidth:1440,margin:"0 auto",padding:"0 22px",display:"flex",borderBottom:`1px solid ${C.border}`}}>
-          {["Event Dashboard","Performance Dashboard","Comparativo de Eventos"].map((t,i)=>(
+          {["Event Dashboard","Performance Dashboard","Comparativo de Eventos","🔍 Search"].map((t,i)=>(
             <button key={i} onClick={()=>setTab(i)} style={{padding:"10px 20px",cursor:"pointer",fontSize:12,fontWeight:tab===i?600:400,color:tab===i?C.orange:"#444",borderBottom:tab===i?`2px solid ${C.orange}`:"2px solid transparent",background:"transparent",border:"none",fontFamily:FONT,transition:"color 0.15s"}}>
               {t}
             </button>
@@ -682,14 +1028,20 @@ export default function App() {
           <div style={{...card,padding:"56px 24px",textAlign:"center"}}>
             <div style={{fontSize:32,marginBottom:10}}>🎯</div>
             <div style={{fontSize:14,color:C.orange,fontWeight:600,marginBottom:6}}>Selecione um ou mais eventos para começar</div>
-            <div style={{fontSize:12,color:"#444",marginBottom:10}}>Use o seletor acima para escolher os eventos que deseja analisar</div>
-            <div style={{fontSize:11,color:"#333"}}>{allEvs.length} eventos · {rawEmpresas.length} empresas · {rawDeals.length} deals</div>
+            <div style={{fontSize:12,color:C.muted,marginBottom:16}}>Use o seletor acima para escolher os eventos que deseja analisar</div>
+            <div style={{fontSize:11,color:C.muted,marginBottom:20}}>{allEvs.length} eventos · {rawEmpresas.length} empresas · {rawDeals.length} deals</div>
+            {!demoMode&&(
+              <button onClick={loadDemo} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:6,padding:"8px 18px",color:C.muted,fontSize:11,cursor:"pointer",fontFamily:FONT}}>
+                🧪 Carregar dados demo
+              </button>
+            )}
           </div>
         ):(
           <>
             {tab===0&&<Tab1/>}
             {tab===1&&<Tab2/>}
             {tab===2&&<Tab3/>}
+            {tab===3&&<Tab4/>}
           </>
         )}
       </div>
