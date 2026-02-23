@@ -135,10 +135,6 @@ export default function App() {
   const [gLoading, setGLoading] = useState(false);
   const [gResultado, setGResultado] = useState(null);
   const [gErro, setGErro] = useState("");
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPass, setLoginPass] = useState("");
-  const [loginErr, setLoginErr] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
   const ref = useRef(null);
 
   useEffect(()=>{
