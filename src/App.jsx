@@ -1246,7 +1246,7 @@ export default function App() {
             <div style={{display:"flex",alignItems:"center",gap:9,fontWeight:700,fontSize:16,color:"#FFF"}}>
               <div style={{background:C.orange,borderRadius:5,width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#000"}}>⚡</div>
               Event<span style={{color:C.orange}}>Hub</span>
-              {demoMode&&<span style={{background:"rgba(255,165,0,0.15)",color:C.orange,fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:20,border:`1px solid ${C.orange}`,letterSpacing:1}}>DEMO</span>}
+
             </div>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
               <span style={{fontSize:9,color:"#AAA",letterSpacing:2}}>ANÁLISE ESTRATÉGICA DE EVENTOS</span>
@@ -1276,7 +1276,7 @@ export default function App() {
             </div>
             {selEvs.length>0&&<span style={{background:C.orange,color:"#000",borderRadius:20,padding:"1px 9px",fontSize:11,fontWeight:700}}>{selEvs.length}</span>}
             {selEvs.length>0&&<button onClick={()=>setSelEvs([])} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:5,padding:"5px 10px",color:"#CCC",cursor:"pointer",fontSize:11}}>Limpar</button>}
-            {demoMode&&<button onClick={()=>{setDemoMode(false);setRawEmpresas([]);setRawDeals([]);setRawContatos([]);setRawCustos([]);setRawTarget([]);setSelEvs([]);setLoading(false);}} style={{background:"rgba(255,165,0,0.1)",border:`1px solid ${C.orange}`,borderRadius:5,padding:"5px 10px",color:C.orange,cursor:"pointer",fontSize:11}}>Sair do demo</button>}
+
             {win&&<div style={{background:"rgba(255,165,0,0.06)",border:`1px solid rgba(255,165,0,0.15)`,borderRadius:5,padding:"5px 10px",fontSize:11,color:"#EEE",display:"flex",gap:5,alignItems:"center"}}><span>📅</span><span style={{color:"#AAA"}}><b style={{color:C.orange}}>Janela:</b> {win.s.toLocaleDateString("pt-BR")} → {win.e.toLocaleDateString("pt-BR")}</span></div>}
           </div>
         </div>
@@ -1296,11 +1296,7 @@ export default function App() {
             <div style={{fontSize:14,color:C.orange,fontWeight:600,marginBottom:6}}>Selecione um ou mais eventos para começar</div>
             <div style={{fontSize:12,color:C.muted,marginBottom:16}}>Use o seletor acima para escolher os eventos que deseja analisar</div>
             <div style={{fontSize:11,color:C.muted,marginBottom:20}}>{allEvs.length} eventos · {rawEmpresas.length} empresas ativas · {rawTarget.length} empresas target · {rawDeals.length} deals</div>
-            {!demoMode&&(
-              <button onClick={loadDemo} style={{background:"transparent",border:`1px solid ${C.border}`,borderRadius:6,padding:"8px 18px",color:C.muted,fontSize:11,cursor:"pointer",fontFamily:FONT}}>
-                🧪 Carregar dados demo
-              </button>
-            )}
+
           </div>
         ):(
           <>
