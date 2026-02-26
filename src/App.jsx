@@ -109,6 +109,11 @@ export default function App() {
   const [rawContatos, setRawContatos] = useState([]);
   const [rawCustos, setRawCustos] = useState([]);
   const [rawTarget, setRawTarget] = useState([]);
+  const [rawClientes, setRawClientes] = useState([]);
+
+  const [rawTargetContatos, setRawTargetContatos] = useState([]);
+  const [expandedCli, setExpandedCli] = useState(null);
+  const [expandedPro, setExpandedPro] = useState(null);
   const [dpMap, setDpMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadMsg, setLoadMsg] = useState("Carregando...");
@@ -125,16 +130,6 @@ export default function App() {
   const [loginPass, setLoginPass] = useState("");
   const [loginErr, setLoginErr] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
-  const [gNome, setGNome] = useState("");
-  const [gObjetivo, setGObjetivo] = useState("");
-  const [gSegmentos, setGSegmentos] = useState([]);
-  const [gTiers, setGTiers] = useState([]);
-  const [gStatus, setGStatus] = useState("ambos");
-  const [gVagas, setGVagas] = useState("50");
-  const [gTexto, setGTexto] = useState("");
-  const [gLoading, setGLoading] = useState(false);
-  const [gResultado, setGResultado] = useState(null);
-  const [gErro, setGErro] = useState("");
   const ref = useRef(null);
 
   useEffect(()=>{
@@ -167,6 +162,15 @@ export default function App() {
         } catch(e) {
           setRawTarget([]);
         }
+        try {
+          const clientes = await fetchSheet("clientes");
+          setRawClientes(Array.isArray(clientes) ? clientes : []);
+        } catch(e) { setRawClientes([]); }
+
+        try {
+          const tc = await fetchSheet("target_contatos");
+          setRawTargetContatos(Array.isArray(tc) ? tc : []);
+        } catch(e) { setRawTargetContatos([]); }
         const m={};
         dp.forEach(r=>{
           if(r.pipeline_stage&&r.stage_name) m[r.pipeline_stage]=r.stage_name;
@@ -718,477 +722,579 @@ export default function App() {
     </div>
   );
 
-  const Tab3 = ()=>{
-    if(selEvs.length<2) return (
-      <div style={{...card,padding:"56px 24px",textAlign:"center"}}>
-        <div style={{fontSize:28,marginBottom:10}}>📊</div>
-        <div style={{fontSize:13,color:C.muted}}>Selecione 2 ou mais eventos para comparar.</div>
-      </div>
-    );
-    const ranked=Object.entries(perEv).sort((a,b)=>b[1].score-a[1].score);
-    const byRd=Object.entries(perEv).sort((a,b)=>b[1].rd-a[1].rd);
-    const sc=s=>s>=70?C.green:s>=40?C.orange:C.tart;
-    return (
-      <div>
-        <div style={sTit}>RANKING POR SCORE ESTRATÉGICO</div>
-        <div style={{...card,padding:0,overflow:"hidden",marginBottom:14}}>
-          <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
-            <colgroup><col style={{width:24}}/><col/><col style={{width:104}}/><col style={{width:118}}/><col style={{width:64}}/><col style={{width:118}}/><col style={{width:82}}/></colgroup>
-            <thead><tr>
-              <th style={{...th,textAlign:"right"}}>#</th>
-              <th style={{...th,textAlign:"left"}}>EVENTO</th>
-              <th style={{...th,textAlign:"left"}}>SCORE</th>
-              <th style={{...th,textAlign:"left"}}>RECEITA DIR.</th>
-              <th style={{...th,textAlign:"left"}}>% T0+T1</th>
-              <th style={{...th,textAlign:"left"}}>RECEITA INF.</th>
-              <th style={{...th,textAlign:"left"}}>INF.</th>
-            </tr></thead>
-            <tbody>
-              {ranked.map(([ev,d],i)=>(
-                <tr key={ev} style={{background:i%2===0?"rgba(255,255,255,0.015)":"transparent"}}>
-                  <td style={{...td,width:24,textAlign:"right",color:"#333",fontSize:11}}>{i+1}</td>
-                  <td style={{...td,color:C.text}}><Trunc s={ev} n={32}/></td>
-                  <td style={td}>
-                    <div style={{display:"flex",alignItems:"center",gap:7}}>
-                      <div style={{background:C.muted,borderRadius:100,height:3,width:48,overflow:"hidden",flexShrink:0}}>
-                        <div style={{width:`${d.score}%`,height:"100%",background:sc(d.score),borderRadius:100}}/>
-                      </div>
-                      <span style={{fontWeight:700,color:sc(d.score),fontSize:13,fontVariantNumeric:"tabular-nums"}}>{d.score}</span>
-                    </div>
-                  </td>
-                  <td style={{...td,color:C.green,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{fBRL(d.rd)}</td>
-                  <td style={{...td,fontVariantNumeric:"tabular-nums"}}>{fPct(d.pT)}</td>
-                  <td style={{...td,color:C.crayola,fontVariantNumeric:"tabular-nums"}}>{fBRL(d.ri)}</td>
-                  <td style={{...td,fontVariantNumeric:"tabular-nums"}}>{fNum(d.nInf)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={sTit}>COMPARATIVO COMPLETO</div>
-        <div style={{...card,padding:0,overflow:"hidden"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
-            <colgroup><col/><col style={{width:64}}/><col style={{width:80}}/><col style={{width:110}}/><col style={{width:52}}/><col style={{width:110}}/><col style={{width:96}}/><col style={{width:96}}/><col style={{width:58}}/></colgroup>
-            <thead><tr>
-              <th style={{...th,textAlign:"left"}}>EVENTO</th>
-              <th style={{...th,textAlign:"left"}}>EMPS</th>
-              <th style={{...th,textAlign:"left"}}>INFLUENC.</th>
-              <th style={{...th,textAlign:"left"}}>REC. INF.</th>
-              <th style={{...th,textAlign:"left"}}>DIR.</th>
-              <th style={{...th,textAlign:"left"}}>REC. DIR.</th>
-              <th style={{...th,textAlign:"left"}}>TKT INF.</th>
-              <th style={{...th,textAlign:"left"}}>TKT DIR.</th>
-              <th style={{...th,textAlign:"left"}}>%T0+T1</th>
-            </tr></thead>
-            <tbody>
-              {byRd.map(([ev,d],i)=>(
-                <tr key={ev} style={{background:i%2===0?"rgba(255,255,255,0.015)":"transparent"}}>
-                  <td style={{...td,color:C.text}}><Trunc s={ev} n={28}/></td>
-                  <td style={{...td,fontVariantNumeric:"tabular-nums"}}>{fNum(d.nEmp)}</td>
-                  <td style={{...td,fontVariantNumeric:"tabular-nums"}}>{fNum(d.nInf)}</td>
-                  <td style={{...td,color:C.crayola,fontVariantNumeric:"tabular-nums"}}>{fBRL(d.ri)}</td>
-                  <td style={{...td,fontVariantNumeric:"tabular-nums"}}>{fNum(d.nDir)}</td>
-                  <td style={{...td,color:C.green,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{fBRL(d.rd)}</td>
-                  <td style={{...td,fontVariantNumeric:"tabular-nums"}}>{fBRL(d.tInf)}</td>
-                  <td style={{...td,fontVariantNumeric:"tabular-nums"}}>{fBRL(d.tDir)}</td>
-                  <td style={{...td,fontVariantNumeric:"tabular-nums"}}>{fPct(d.pT)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
+  // ─── HELPERS ──────────────────────────────────────────────────────────────
+  const EVENTOS_2026 = useMemo(()=>
+    allEvs.filter(e=>e.startsWith("2026-")).sort()
+  ,[allEvs]);
+
+  const META_PCT = 0.6;
+  const META_EVENTOS = 3;
+
+  const TierBadge = ({t}) => {
+    const tc = TIER_C[t]||"#CCC";
+    return <span style={{background:`${tc}25`,color:tc,borderRadius:3,padding:"1px 7px",fontSize:9,fontWeight:700,border:`1px solid ${tc}`,display:"inline-block"}}>{tl(t)}</span>;
   };
 
-  const Tab4 = ()=>{
-    const lq = searchQ.toLowerCase();
-    const empResults = useMemo(()=>{
-      if(!lq) return rawEmpresas.slice(0,50);
-      return rawEmpresas.filter(r=>
-        (r.name||"").toLowerCase().includes(lq) ||
-        (r.setor_picklist||"").toLowerCase().includes(lq)
-      ).slice(0,50);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[searchQ, rawEmpresas]);
-
-    const contResults = useMemo(()=>{
-      if(!lq) return rawContatos.slice(0,50);
-      return rawContatos.filter(r=>{
-        const nome = ((r.firstname||"")+" "+(r.lastname||"")).toLowerCase();
-        return nome.includes(lq) || (r.email||"").toLowerCase().includes(lq) || (r.jobtitle||"").toLowerCase().includes(lq);
-      }).slice(0,50);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[searchQ, rawContatos]);
-
-    return (
-      <div>
-        <div style={{marginBottom:16}}>
-          <input
-            value={searchQ}
-            onChange={e=>setSearchQ(e.target.value)}
-            placeholder="Buscar empresa ou contato..."
-            style={{width:"100%",padding:"10px 14px",fontSize:13,border:`1px solid ${C.border}`,borderRadius:8,outline:"none",background:C.surface,color:C.text,boxSizing:"border-box",boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}
-          />
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-          {/* EMPRESAS */}
-          <div>
-            <div style={sTit}>EMPRESAS ({empResults.length}{rawEmpresas.length>50&&!lq?"+":""})</div>
-            <div style={{...card,padding:0,overflow:"hidden"}}>
-              <table style={{width:"100%",borderCollapse:"collapse"}}>
-                <thead><tr>
-                  <th style={{...th,textAlign:"left"}}></th>
-                  <th style={{...th,textAlign:"left"}}>EMPRESA</th>
-                  <th style={{...th,textAlign:"left",width:48}}>TIER</th>
-                  <th style={{...th,textAlign:"left",width:72}}>STATUS</th>
-                </tr></thead>
-                <tbody>
-                  {empResults.map((r,i)=>{
-                    const t=r.tier_growth||"";
-                    const tb={background:`${TIER_C[t]||"#EEE"}30`,color:TIER_C[t]||"#999",borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${TIER_C[t]||"#DDD"}`,display:"inline-block"};
-                    const isExp=expandedEmp===("s_"+r.company_id);
-                    const hist=historicoEmpresa[r.company_id]||[];
-                    const cts=(rawContatos.filter(c=>c.company_id===r.company_id));
-                    return (
-                      <>
-                        <tr key={i} onClick={()=>setExpandedEmp(isExp?null:("s_"+r.company_id))} style={{cursor:"pointer",background:isExp?"rgba(255,165,0,0.04)":i%2===0?"rgba(0,0,0,0.02)":"transparent"}}>
-                          <td style={{...td,width:24,color:"#CCC",fontSize:10,textAlign:"center"}}>{isExp?"▼":"▶"}</td>
-                          <td style={{...td,color:C.text,fontWeight:isExp?500:400}}>{r.name||"—"}</td>
-                          <td style={td}><span style={tb}>{tl(t)}</span></td>
-                          <td style={{...td,color:r.status_da_empresa__cliente?.toLowerCase()==="true"?C.green:C.dim,width:72}}>{r.status_da_empresa__cliente?.toLowerCase()==="true"?"Cliente":"Prospect"}</td>
-                        </tr>
-                        {isExp&&(
-                          <tr key={"exp_"+i}>
-                            <td colSpan={4} style={{padding:0,background:"#FAFAF8",borderBottom:`1px solid ${C.border}`}}>
-                              <div style={{padding:"12px 16px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-                                <div>
-                                  <div style={{fontSize:9,color:C.orange,letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:600}}>📅 Histórico de Eventos ({hist.length})</div>
-                                  {hist.length===0?<div style={{fontSize:11,color:C.muted}}>Sem histórico</div>:(
-                                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                                      {[...hist].sort().reverse().map((ev,ei)=>(
-                                        <div key={ei} style={{fontSize:11,color:C.dim,display:"flex",alignItems:"center",gap:6}}>
-                                          <span style={{width:5,height:5,borderRadius:"50%",background:C.orange,flexShrink:0,display:"inline-block"}}/>
-                                          {ev}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                                <div>
-                                  <div style={{fontSize:9,color:C.crayola,letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:600}}>👤 Contatos ({cts.length})</div>
-                                  {cts.length===0?<div style={{fontSize:11,color:C.muted}}>Nenhum contato</div>:(
-                                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                                      {cts.map((c,ci)=>(
-                                        <div key={ci} style={{fontSize:11,color:C.dim}}>
-                                          {[c.firstname,c.lastname].filter(Boolean).join(" ")||"—"}
-                                          {c.jobtitle&&<span style={{color:C.muted,fontSize:10}}> · {c.jobtitle}</span>}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {!empResults.length&&<div style={{padding:"18px",textAlign:"center",color:C.muted,fontSize:12}}>Nenhuma empresa encontrada</div>}
-            </div>
-          </div>
-
-          {/* CONTATOS */}
-          <div>
-            <div style={sTit}>CONTATOS ({contResults.length}{rawContatos.length>50&&!lq?"+":""})</div>
-            <div style={{...card,padding:0,overflow:"hidden"}}>
-              <table style={{width:"100%",borderCollapse:"collapse"}}>
-                <thead><tr>
-                  <th style={{...th,textAlign:"left"}}>NOME</th>
-                  <th style={{...th,textAlign:"left"}}>CARGO</th>
-                  <th style={{...th,textAlign:"left",width:110}}>EMPRESA</th>
-                </tr></thead>
-                <tbody>
-                  {contResults.map((r,i)=>{
-                    const nome=[r.firstname,r.lastname].filter(Boolean).join(" ")||"—";
-                    const emp=rawEmpresas.find(e=>e.company_id===r.company_id);
-                    return (
-                      <tr key={i} style={{background:i%2===0?"rgba(0,0,0,0.02)":"transparent"}}>
-                        <td style={{...td,color:C.text}}>{nome}</td>
-                        <td style={td}><Trunc s={r.jobtitle||"—"} n={22}/></td>
-                        <td style={{...td,width:110,fontSize:11,color:C.dim}}><Trunc s={emp?.name||"—"} n={16}/></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {!contResults.length&&<div style={{padding:"18px",textAlign:"center",color:C.muted,fontSize:12}}>Nenhum contato encontrado</div>}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  const statusCliente = ev2026 => {
+    const n = ev2026.length;
+    if(n>=META_EVENTOS) return {label:"✅ Meta atingida", color:C.green, bg:"rgba(22,163,74,0.08)"};
+    if(n>0) return {label:`🟡 ${n}/${META_EVENTOS} eventos`, color:"#EAB308", bg:"rgba(234,179,8,0.08)"};
+    return {label:"⚪ Nenhum evento", color:C.muted, bg:"rgba(0,0,0,0.03)"};
   };
 
-
-  // ─── TAB 5 — GERADOR DE LISTA ──────────────────────────────────────────────
-  const allSegmentos = useMemo(()=>{
-    const s=new Set();
-    rawEmpresas.forEach(r=>{ if(r.setor_picklist) s.add(r.setor_picklist); });
-    rawTarget.forEach(r=>{ if(r.setor_picklist) s.add(r.setor_picklist); });
-    return [...s].sort();
-  },[rawEmpresas, rawTarget]);
-
-  const handleGerarLista = async()=>{
-    setGLoading(true);
-    setGErro("");
-    setGResultado(null);
-
-    // Build company summaries — base ativa (já foi a evento)
-    const idsAtivos = new Set(rawEmpresas.map(r=>r.company_id));
-    const empresasSummary = rawEmpresas.map(r=>{
-      const eventos = (r.eventos__picklist_de_presenca||"").split(";").map(e=>e.trim()).filter(Boolean);
+  // ─── TAB CLIENTES ─────────────────────────────────────────────────────────
+  const TabClientes = () => {
+    const totalCli = rawClientes.length;
+    const clientesComEvs = rawClientes.map(r=>{
+      const empresa = rawEmpresas.find(e=>e.company_id===r.company_id)||{};
+      const evs = (empresa.eventos__picklist_de_presenca||"").split(";").map(e=>e.trim()).filter(Boolean);
+      const evs2026 = evs.filter(e=>e.startsWith("2026-"));
+      const contatos = rawTargetContatos.filter(c=>c.company_id===r.company_id);
       const dealsEmp = rawDeals.filter(d=>d.company_id===r.company_id);
-      const dealsAbertos = dealsEmp.filter(d=>d.dealstage&&!["closedwon","closedlost"].includes(d.dealstage));
-      const receitaTotal = dealsEmp.reduce((s,d)=>s+fAmt(d.amount),0);
-      return {
-        id: r.company_id,
-        nome: r.name,
-        tier: r.tier_growth||"",
-        segmento: r.setor_picklist||"",
-        cliente: r.status_da_empresa__cliente?.toLowerCase()==="true",
-        base: "ativa",
-        qtdEventos: eventos.length,
-        dealsAbertos: dealsAbertos.length,
-        receitaTotal,
-      };
+      const receita = dealsEmp.reduce((s,d)=>s+fAmt(d.amount),0);
+      return {...r, evs2026, contatos, receita};
+    }).sort((a,b)=>{
+      const ta=parseInt(a.tier_growth)||9, tb=parseInt(b.tier_growth)||9;
+      if(ta!==tb) return ta-tb;
+      return b.receita-a.receita;
     });
 
-    // Add target companies (not already in base ativa)
-    const targetSummary = rawTarget
-      .filter(r=>!idsAtivos.has(r.company_id))
-      .map(r=>({
-        id: r.company_id,
-        nome: r.name,
-        tier: r.tier_growth||"",
-        segmento: r.setor_picklist||"",
-        cliente: r.status_da_empresa__cliente?.toLowerCase()==="true",
-        base: "target",
-        qtdEventos: 0,
-        dealsAbertos: 0,
-        receitaTotal: 0,
-        plataforma: r.plataforma_ecommerce||"",
-        totalLojas: r.total_lojas||"",
-        volumeEcommerce: r.volume_ecommerce||"",
-      }));
+    const atingiram = clientesComEvs.filter(c=>c.evs2026.length>=META_EVENTOS).length;
+    const metaQtd = Math.ceil(totalCli*META_PCT);
+    const progresso = totalCli>0?atingiram/totalCli:0;
+    const faltamContas = Math.max(0, metaQtd-atingiram);
 
-    const todasEmpresas = [...empresasSummary, ...targetSummary];
-
-    // Apply structural filters first
-    let filtradas = todasEmpresas;
-    if(gSegmentos.length>0) filtradas = filtradas.filter(e=>gSegmentos.includes(e.segmento));
-    if(gTiers.length>0) filtradas = filtradas.filter(e=>gTiers.includes(e.tier));
-    if(gStatus==="cliente") filtradas = filtradas.filter(e=>e.cliente);
-    if(gStatus==="prospect") filtradas = filtradas.filter(e=>!e.cliente);
-
-    // Limit to 200 companies to avoid token overflow
-    const amostra = filtradas.slice(0,200);
-
-    try {
-      const res = await fetch("/api/generate", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          nomeEvento: gNome,
-          objetivo: gObjetivo,
-          vagas: gVagas,
-          texto: gTexto,
-          empresas: amostra,
-        })
-      });
-      if(!res.ok) {
-        const err = await res.json();
-        setGErro(err.error || "Erro ao gerar lista.");
-        setGLoading(false);
-        return;
-      }
-      const parsed = await res.json();
-      setGResultado(parsed);
-    } catch(err) {
-      setGErro("Erro de conexão. Tente novamente.");
-    }
-    setGLoading(false);
-  };
-
-  const exportCSV = ()=>{
-    if(!gResultado) return;
-    const rows = [["company_name","tier","segmento","status","base","prioridade","justificativa"]];
-    gResultado.lista.forEach(r=>{
-      rows.push([r.empresa, "T"+r.tier, r.segmento, r.status, r.base||"", r.prioridade, r.justificativa]);
-    });
-    const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href=url; a.download=`lista_${(gNome||"evento").replace(/\s+/g,"_")}.csv`;
-    a.click(); URL.revokeObjectURL(url);
-  };
-
-  const Tab5 = ()=>{
-    const togSeg = s => setGSegmentos(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s]);
-    const togTier = t => setGTiers(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
-    const sc = p => p<=10?C.green:p<=25?C.orange:C.crayola;
+    const rankEvs = EVENTOS_2026
+      .map(ev=>({ev, qtd:clientesComEvs.filter(c=>c.evs2026.includes(ev)).length}))
+      .sort((a,b)=>b.qtd-a.qtd);
+    const rankColors = [C.orange, C.crayola, "#EAB308", C.muted, C.muted];
 
     return (
-      <div style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:16,alignItems:"start"}}>
-
-        {/* LEFT — BRIEFING */}
-        <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          <div style={{...card,borderTop:`3px solid ${C.orange}`}}>
-            <div style={{fontSize:11,color:C.orange,fontWeight:700,letterSpacing:0.8,marginBottom:14,textTransform:"uppercase"}}>📋 Briefing do Evento</div>
-
-            <div style={{marginBottom:10}}>
-              <label style={{...kLbl,display:"block",marginBottom:4}}>Nome do evento</label>
-              <input value={gNome} onChange={e=>setGNome(e.target.value)} placeholder="Ex: 2026-05 EVENTO VAREJO SUMMIT" style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"7px 10px",fontSize:12,color:C.text,outline:"none",boxSizing:"border-box"}}/>
+      <div>
+        {/* META HEADER */}
+        <div style={{...card,padding:"18px 22px",marginBottom:16,borderTop:`3px solid ${C.orange}`}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:2}}>Meta de Presença 2026</div>
+              <div style={{fontSize:11,color:C.muted}}>60% das contas alvo devem ir a pelo menos 3 eventos em 2026</div>
             </div>
-
-            <div style={{marginBottom:10}}>
-              <label style={{...kLbl,display:"block",marginBottom:4}}>Objetivo</label>
-              <select value={gObjetivo} onChange={e=>setGObjetivo(e.target.value)} style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"7px 10px",fontSize:12,color:gObjetivo?C.text:C.muted,outline:"none",boxSizing:"border-box"}}>
-                <option value="">Selecione...</option>
-                <option>Gerar novos negócios (prospects)</option>
-                <option>Acelerar deals em andamento</option>
-                <option>Fidelizar clientes atuais</option>
-                <option>Misto (clientes e prospects)</option>
-              </select>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:28,fontWeight:700,color:progresso>=META_PCT?C.green:C.orange,fontVariantNumeric:"tabular-nums"}}>{Math.round(progresso*100)}%</div>
+              <div style={{fontSize:11,color:C.muted}}>{atingiram} de {metaQtd} contas necessárias</div>
             </div>
-
-            <div style={{marginBottom:10}}>
-              <label style={{...kLbl,display:"block",marginBottom:4}}>Vagas</label>
-              <input type="number" value={gVagas} onChange={e=>setGVagas(e.target.value)} min="1" max="500" style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"7px 10px",fontSize:12,color:C.text,outline:"none",boxSizing:"border-box"}}/>
-            </div>
-
-            <div style={{marginBottom:10}}>
-              <label style={{...kLbl,display:"block",marginBottom:4}}>Status</label>
-              <div style={{display:"flex",gap:6}}>
-                {["ambos","cliente","prospect"].map(s=>(
-                  <button key={s} onClick={()=>setGStatus(s)} style={{flex:1,padding:"6px",fontSize:11,borderRadius:5,border:`1px solid ${gStatus===s?C.orange:C.border}`,background:gStatus===s?`rgba(255,165,0,0.08)`:"transparent",color:gStatus===s?C.orange:C.dim,cursor:"pointer",textTransform:"capitalize",fontFamily:FONT}}>
-                    {s==="ambos"?"Ambos":s==="cliente"?"Clientes":"Prospects"}
-                  </button>
-                ))}
+          </div>
+          <div style={{background:C.border,borderRadius:100,height:10,overflow:"hidden",marginBottom:8}}>
+            <div style={{width:`${Math.min(progresso/META_PCT*100,100)}%`,height:"100%",background:progresso>=META_PCT?C.green:C.orange,borderRadius:100,transition:"width 0.4s"}}/>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:C.muted,marginBottom:14}}>
+            <span>{atingiram} contas com 3+ eventos ✓</span>
+            {faltamContas>0&&<span style={{color:C.tart}}>Faltam {faltamContas} contas para bater a meta</span>}
+            {faltamContas===0&&<span style={{color:C.green,fontWeight:600}}>🎉 Meta atingida!</span>}
+            <span>Meta: {metaQtd} contas ({Math.round(META_PCT*100)}%)</span>
+          </div>
+          {/* Ranking eventos */}
+          <div style={{fontSize:9,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:8}}>Ranking de presença por evento</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {rankEvs.map(({ev,qtd},i)=>(
+              <div key={i} style={{flex:1,minWidth:140,background:"#FAFAF8",border:`1px solid ${C.border}`,borderTop:`3px solid ${rankColors[i]||C.muted}`,borderRadius:6,padding:"10px 12px"}}>
+                <div style={{fontSize:9,color:C.muted,marginBottom:4,fontWeight:700}}>#{i+1}</div>
+                <div style={{fontSize:11,color:C.text,fontWeight:600,marginBottom:6,lineHeight:1.3}}>{ev.replace(/^\d{4}-\d{2} /,"")}</div>
+                <div style={{fontSize:20,fontWeight:700,color:rankColors[i]||C.muted,fontVariantNumeric:"tabular-nums"}}>{qtd}</div>
+                <div style={{fontSize:9,color:C.muted}}>contas presentes</div>
               </div>
-            </div>
-
-            <div style={{marginBottom:10}}>
-              <label style={{...kLbl,display:"block",marginBottom:4}}>Tiers ({gTiers.length===0?"todos":gTiers.map(t=>"T"+t).join(", ")})</label>
-              <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                {["0","1","2","3","4"].map(t=>(
-                  <button key={t} onClick={()=>togTier(t)} style={{padding:"3px 10px",fontSize:11,borderRadius:4,border:`1px solid ${gTiers.includes(t)?TIER_C[t]:C.border}`,background:gTiers.includes(t)?`${TIER_C[t]}18`:"transparent",color:gTiers.includes(t)?TIER_C[t]:C.dim,cursor:"pointer",fontFamily:FONT,fontWeight:gTiers.includes(t)?700:400}}>
-                    T{t}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{marginBottom:14}}>
-              <label style={{...kLbl,display:"block",marginBottom:4}}>Segmentos ({gSegmentos.length===0?"todos":gSegmentos.length+" selecionados"})</label>
-              <div style={{display:"flex",gap:4,flexWrap:"wrap",maxHeight:80,overflowY:"auto"}}>
-                {allSegmentos.map(s=>(
-                  <button key={s} onClick={()=>togSeg(s)} style={{padding:"3px 8px",fontSize:10,borderRadius:4,border:`1px solid ${gSegmentos.includes(s)?C.orange:C.border}`,background:gSegmentos.includes(s)?`rgba(255,165,0,0.08)`:"transparent",color:gSegmentos.includes(s)?C.orange:C.dim,cursor:"pointer",fontFamily:FONT,whiteSpace:"nowrap"}}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{marginBottom:14}}>
-              <label style={{...kLbl,display:"block",marginBottom:4}}>Instruções adicionais (opcional)</label>
-              <textarea value={gTexto} onChange={e=>setGTexto(e.target.value)} placeholder="Ex: Priorize empresas com deal aberto, evite quem foi nos últimos 2 eventos..." rows={3} style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"7px 10px",fontSize:12,color:C.text,outline:"none",resize:"vertical",boxSizing:"border-box",fontFamily:FONT}}/>
-            </div>
-
-            <button onClick={handleGerarLista} disabled={gLoading||!gNome||!gObjetivo} style={{width:"100%",background:(!gNome||!gObjetivo)?C.border:C.orange,border:"none",borderRadius:6,padding:"10px",color:(!gNome||!gObjetivo)?"#999":"#000",fontSize:13,fontWeight:700,cursor:(!gNome||!gObjetivo||gLoading)?"not-allowed":"pointer",fontFamily:FONT,opacity:gLoading?0.7:1}}>
-              {gLoading?"⏳ Gerando lista...":"✨ Gerar Lista com IA"}
-            </button>
-            {gErro&&<div style={{marginTop:8,fontSize:11,color:C.tart}}>{gErro}</div>}
+            ))}
           </div>
         </div>
 
-        {/* RIGHT — RESULTADO */}
-        <div>
-          {!gResultado&&!gLoading&&(
-            <div style={{...card,padding:"56px 24px",textAlign:"center"}}>
-              <div style={{fontSize:32,marginBottom:10}}>✨</div>
-              <div style={{fontSize:13,color:C.orange,fontWeight:600,marginBottom:6}}>Gerador de Lista com IA</div>
-              <div style={{fontSize:12,color:C.muted}}>Preencha o briefing ao lado e clique em Gerar Lista</div>
+        {/* TABELA */}
+        <div style={{...card,padding:0,overflow:"hidden"}}>
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead><tr>
+              <th style={{...th,width:28}}></th>
+              <th style={th}>CONTA</th>
+              <th style={{...th,width:44}}>TIER</th>
+              <th style={{...th,width:100}}>SEGMENTO</th>
+              <th style={{...th,width:100}}>RECEITA</th>
+              <th style={{...th,width:160}}>PROGRESSO 2026</th>
+              <th style={{...th,width:160}}>STATUS</th>
+            </tr></thead>
+            <tbody>
+              {clientesComEvs.map((c,i)=>{
+                const st = statusCliente(c.evs2026);
+                const isExp = expandedCli===c.company_id;
+                return (
+                  <React.Fragment key={i}>
+                    <tr onClick={()=>setExpandedCli(isExp?null:c.company_id)}
+                      style={{cursor:"pointer",background:isExp?"rgba(255,165,0,0.03)":i%2===0?"rgba(0,0,0,0.015)":"transparent"}}>
+                      <td style={{...td,textAlign:"center",color:"#CCC",fontSize:10}}>{isExp?"▼":"▶"}</td>
+                      <td style={{...td,color:C.text,fontWeight:500}}>{c.name||"—"}</td>
+                      <td style={td}><TierBadge t={c.tier_growth||""}/></td>
+                      <td style={{...td,fontSize:11}}>{c.setor_picklist||"—"}</td>
+                      <td style={{...td,color:C.green,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{fBRL(c.receita)}</td>
+                      <td style={td}>
+                        <div style={{display:"flex",gap:3,alignItems:"center"}}>
+                          {[0,1,2].map(idx=>(
+                            <div key={idx} style={{width:28,height:6,borderRadius:100,background:c.evs2026.length>idx?C.orange:C.border}}/>
+                          ))}
+                          <span style={{fontSize:10,color:C.muted,marginLeft:4}}>{c.evs2026.length}/3</span>
+                        </div>
+                      </td>
+                      <td style={td}><span style={{background:st.bg,color:st.color,borderRadius:4,padding:"3px 8px",fontSize:10,fontWeight:600}}>{st.label}</span></td>
+                    </tr>
+                    {isExp&&(
+                      <tr>
+                        <td colSpan={7} style={{padding:0,background:"#FAFAF8",borderBottom:`1px solid ${C.border}`}}>
+                          <div style={{padding:"14px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+                            <div>
+                              <div style={{fontSize:9,color:C.orange,letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:700}}>👤 Contatos Mapeados ({c.contatos.length})</div>
+                              {c.contatos.length===0?<div style={{fontSize:11,color:C.muted}}>Nenhum contato cadastrado</div>:(
+                                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                                  {c.contatos.map((ct,ci)=>{
+                                    const foiEvs = (ct.eventos__participou||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-"));
+                                    return (
+                                      <div key={ci} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"8px 12px"}}>
+                                        <div style={{fontSize:12,fontWeight:600,color:C.text}}>{[ct.firstname,ct.lastname].filter(Boolean).join(" ")||"—"}</div>
+                                        <div style={{fontSize:10,color:C.muted}}>{ct.jobtitle||""} {ct.email?"· "+ct.email:""}</div>
+                                        {foiEvs.length>0&&(
+                                          <div style={{marginTop:5,display:"flex",gap:4,flexWrap:"wrap"}}>
+                                            {foiEvs.map((ev,ei)=>(
+                                              <span key={ei} style={{background:"rgba(255,165,0,0.1)",color:C.orange,fontSize:9,padding:"1px 6px",borderRadius:3,border:"1px solid rgba(255,165,0,0.3)"}}>
+                                                ✓ {ev.replace(/^\d{4}-\d{2} /,"")}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div style={{fontSize:9,color:C.crayola,letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:700}}>📅 Eventos 2026</div>
+                              <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                                {EVENTOS_2026.map((ev,ei)=>{
+                                  const foi = c.evs2026.includes(ev);
+                                  return (
+                                    <div key={ei} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:5,background:foi?"rgba(22,163,74,0.06)":"rgba(0,0,0,0.02)",border:`1px solid ${foi?"rgba(22,163,74,0.2)":C.border}`}}>
+                                      <span style={{fontSize:14}}>{foi?"✅":"⬜"}</span>
+                                      <span style={{fontSize:11,color:foi?C.green:C.muted}}>{ev}</span>
+                                    </div>
+                                  );
+                                })}
+                                {EVENTOS_2026.length===0&&<div style={{fontSize:11,color:C.muted}}>Nenhum evento de 2026 encontrado</div>}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+          {!rawClientes.length&&<div style={{padding:"24px",textAlign:"center",color:C.muted,fontSize:12}}>Nenhum cliente na aba "clientes"</div>}
+        </div>
+      </div>
+    );
+  };
+
+  // ─── TAB PROSPECTS ────────────────────────────────────────────────────────
+  const TabProspects = () => {
+    const prospectsComEvs = rawTarget.map(r=>{
+      const convites2026 = rawTargetContatos
+        .filter(c=>c.company_id===r.company_id)
+        .flatMap(c=>(c.eventos__convidado||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-")));
+      const participou2026 = rawTargetContatos
+        .filter(c=>c.company_id===r.company_id)
+        .flatMap(c=>(c.eventos__participou||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-")));
+      const contatos = rawTargetContatos.filter(c=>c.company_id===r.company_id);
+      const convUniq = [...new Set(convites2026)];
+      const partUniq = [...new Set(participou2026)];
+      return {...r, convites2026:convUniq, participou2026:partUniq, contatos};
+    }).sort((a,b)=>{
+      const ta=parseInt(a.tier_growth)||9, tb=parseInt(b.tier_growth)||9;
+      return ta-tb;
+    });
+
+    const jaFoi = prospectsComEvs.filter(p=>p.participou2026.length>0).length;
+    const convidado = prospectsComEvs.filter(p=>p.convites2026.length>0&&p.participou2026.length===0).length;
+    const semContato = prospectsComEvs.filter(p=>p.convites2026.length===0).length;
+
+    return (
+      <div>
+        {/* KPIs */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>
+          {[
+            {l:"PROSPECTS MAPEADOS", v:prospectsComEvs.length, c:"#6366F1", sub:"contas alvo"},
+            {l:"JÁ PARTICIPARAM",    v:jaFoi,    c:C.green,  sub:"de algum evento 2026"},
+            {l:"CONVIDADOS",         v:convidado, c:C.orange, sub:"aguardando participação"},
+            {l:"NÃO CONTATADOS",    v:semContato,c:C.muted,  sub:"sem convite ainda"},
+          ].map((k,i)=>(
+            <div key={i} style={{...card,borderLeft:`3px solid ${k.c}`,padding:"12px 16px"}}>
+              <div style={{fontSize:9,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>{k.l}</div>
+              <div style={{fontSize:24,fontWeight:700,color:k.c,fontVariantNumeric:"tabular-nums",lineHeight:1}}>{k.v}</div>
+              <div style={{fontSize:10,color:C.muted,marginTop:4}}>{k.sub}</div>
             </div>
-          )}
-          {gLoading&&(
-            <div style={{...card,padding:"56px 24px",textAlign:"center"}}>
-              <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
-              <div style={{width:36,height:36,border:`2px solid ${C.border}`,borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 16px"}}/>
-              <div style={{fontSize:12,color:C.muted}}>Analisando {rawEmpresas.length + rawTarget.length} empresas ({rawEmpresas.length} ativas + {rawTarget.length} target)...</div>
+          ))}
+        </div>
+
+        {/* TABELA */}
+        <div style={{...card,padding:0,overflow:"hidden"}}>
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead><tr>
+              <th style={{...th,width:28}}></th>
+              <th style={{...th,width:28,textAlign:"right"}}>#</th>
+              <th style={th}>EMPRESA</th>
+              <th style={{...th,width:44}}>TIER</th>
+              <th style={{...th,width:110}}>SEGMENTO</th>
+              <th style={{...th,width:80}}>LOJAS</th>
+              <th style={{...th,width:110}}>PLATAFORMA</th>
+              <th style={{...th,width:150}}>STATUS</th>
+            </tr></thead>
+            <tbody>
+              {prospectsComEvs.map((p,i)=>{
+                const isExp = expandedPro===p.company_id;
+                const status = p.participou2026.length>0
+                  ? {label:"✅ Já participou", color:C.green, bg:"rgba(22,163,74,0.08)"}
+                  : p.convites2026.length>0
+                  ? {label:"📨 Convidado", color:C.orange, bg:"rgba(255,165,0,0.08)"}
+                  : {label:"⚪ Não contatado", color:C.muted, bg:"rgba(0,0,0,0.03)"};
+                return (
+                  <React.Fragment key={i}>
+                    <tr onClick={()=>setExpandedPro(isExp?null:p.company_id)}
+                      style={{cursor:"pointer",background:isExp?"rgba(99,102,241,0.03)":i%2===0?"rgba(0,0,0,0.015)":"transparent"}}>
+                      <td style={{...td,textAlign:"center",color:"#CCC",fontSize:10}}>{isExp?"▼":"▶"}</td>
+                      <td style={{...td,textAlign:"right",color:"#CCC",fontSize:11}}>{i+1}</td>
+                      <td style={{...td,color:C.text,fontWeight:500}}>{p.name||"—"}</td>
+                      <td style={td}><TierBadge t={p.tier_growth||""}/></td>
+                      <td style={{...td,fontSize:11}}>{p.setor_picklist||"—"}</td>
+                      <td style={{...td,fontSize:11}}>{p.total_lojas==="0"||!p.total_lojas?"Online":p.total_lojas}</td>
+                      <td style={{...td,fontSize:11}}>{p.plataforma_ecommerce||"—"}</td>
+                      <td style={td}><span style={{background:status.bg,color:status.color,borderRadius:4,padding:"3px 8px",fontSize:10,fontWeight:600}}>{status.label}</span></td>
+                    </tr>
+                    {isExp&&(
+                      <tr>
+                        <td colSpan={8} style={{padding:0,background:"#FAFAF8",borderBottom:`1px solid ${C.border}`}}>
+                          <div style={{padding:"14px 20px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+                            <div>
+                              <div style={{fontSize:9,color:"#6366F1",letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:700}}>👤 Contatos Mapeados ({p.contatos.length})</div>
+                              {p.contatos.length===0?<div style={{fontSize:11,color:C.muted}}>Nenhum contato cadastrado</div>:(
+                                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                                  {p.contatos.map((ct,ci)=>{
+                                    const foiEvs = (ct.eventos__participou||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-"));
+                                    return (
+                                      <div key={ci} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                                        <div>
+                                          <div style={{fontSize:12,fontWeight:600,color:C.text}}>{[ct.firstname,ct.lastname].filter(Boolean).join(" ")||"—"}</div>
+                                          <div style={{fontSize:10,color:C.muted}}>{ct.jobtitle||""} {ct.email?"· "+ct.email:""}</div>
+                                        </div>
+                                        <span style={{background:foiEvs.length>0?"rgba(22,163,74,0.1)":"rgba(0,0,0,0.04)",color:foiEvs.length>0?C.green:C.muted,borderRadius:4,padding:"2px 8px",fontSize:10,fontWeight:600,border:`1px solid ${foiEvs.length>0?"rgba(22,163,74,0.2)":C.border}`,flexShrink:0}}>
+                                          {foiEvs.length>0?"✓ Foi a evento":"Não foi"}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div style={{fontSize:9,color:C.orange,letterSpacing:1,textTransform:"uppercase",marginBottom:8,fontWeight:700}}>📅 Histórico de Convites 2026</div>
+                              {p.convites2026.length===0&&p.participou2026.length===0
+                                ? <div style={{fontSize:11,color:C.muted,padding:"8px 0"}}>Nenhum convite feito ainda em 2026</div>
+                                : EVENTOS_2026.map((ev,ei)=>{
+                                    const conv = p.convites2026.includes(ev);
+                                    const foi = p.participou2026.includes(ev);
+                                    if(!conv&&!foi) return null;
+                                    return (
+                                      <div key={ei} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:5,marginBottom:4,background:foi?"rgba(22,163,74,0.06)":"rgba(255,165,0,0.04)",border:`1px solid ${foi?"rgba(22,163,74,0.2)":"rgba(255,165,0,0.2)"}`}}>
+                                        <span style={{fontSize:12}}>{foi?"✅":"📨"}</span>
+                                        <div style={{flex:1}}>
+                                          <div style={{fontSize:11,color:foi?C.green:C.orange}}>{ev}</div>
+                                          <div style={{fontSize:9,color:C.muted}}>{foi?"Participou":"Convidado — não foi"}</div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })
+                              }
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+          {!rawTarget.length&&<div style={{padding:"24px",textAlign:"center",color:C.muted,fontSize:12}}>Nenhum prospect na aba "target"</div>}
+        </div>
+      </div>
+    );
+  };
+
+
+  // ─── TAB INSIGHTS ─────────────────────────────────────────────────────────
+  const ALERTAS_INS = {
+    acionar:   { emoji:"🔥", label:"Acionar Agora",   color:"#EF4444", bg:"rgba(239,68,68,0.06)",  border:"rgba(239,68,68,0.18)"  },
+    quente:    { emoji:"🌱", label:"Prospect Quente", color:"#16A34A", bg:"rgba(22,163,74,0.06)",  border:"rgba(22,163,74,0.18)"  },
+    churn:     { emoji:"⚠️", label:"Risco de Churn",  color:"#EAB308", bg:"rgba(234,179,8,0.06)",  border:"rgba(234,179,8,0.18)"  },
+    morno:     { emoji:"💛", label:"Morno",           color:"#F97316", bg:"rgba(249,115,22,0.06)", border:"rgba(249,115,22,0.18)" },
+    monitorar: { emoji:"👀", label:"Monitorar",       color:"#6366F1", bg:"rgba(99,102,241,0.06)", border:"rgba(99,102,241,0.18)" },
+    inativo:   { emoji:"💤", label:"Inativo",         color:"#999",    bg:"rgba(0,0,0,0.03)",      border:"rgba(0,0,0,0.09)"      },
+  };
+  const ORDEM_INS = ["acionar","quente","churn","morno","monitorar","inativo"];
+
+  const [insSelec, setInsSelec]       = useState(null);
+  const [insExpanded, setInsExpanded] = useState(null);
+  const [insFiltTiers, setInsFiltTiers] = useState([]);
+  const [insFiltTipo, setInsFiltTipo]   = useState("todos");
+  const [insFiltSegs, setInsFiltSegs]   = useState([]);
+  const [insFiltAlerta, setInsFiltAlerta] = useState("todos");
+  const [insSegOpen, setInsSegOpen]     = useState(false);
+  const insSegRef = useRef(null);
+  const insRowRefs = useRef({});
+
+  const insClassificar = (e) => {
+    const recusados = (e.convites2026||[]).filter(c=>!(e.participou2026||[]).includes(c)).length;
+    const foia2026  = (e.participou2026||[]).length > 0;
+    const tier01    = e.tier === "0" || e.tier === "1";
+    if (tier01 && e.dealsAbertos > 0 && foia2026)
+      return { tipo:"acionar",   texto:`${e.dealsAbertos} deal${e.dealsAbertos>1?"s":""} aberto${e.dealsAbertos>1?"s":""} e foi a ${e.participou2026.length} evento${e.participou2026.length>1?"s":""} em 2026 — momento ideal para avançar na negociação.` };
+    if (tier01 && e.tipo==="prospect" && recusados >= 2 && !foia2026)
+      return { tipo:"quente",    texto:`Prospect ${tl(e.tier)} convidado ${e.convites2026.length}x mas nunca participou. Alta prioridade — vale abordagem direta antes do próximo evento.` };
+    if (e.tipo==="cliente" && recusados >= 3)
+      return { tipo:"churn",     texto:`Recusou ${recusados} convite${recusados>1?"s":""} consecutivos sem participação em 2026. Sinal de distanciamento — acionar para entender o momento.` };
+    if (e.tipo==="cliente" && foia2026 && e.dealsAbertos === 0)
+      return { tipo:"morno",     texto:`Engajado com eventos (${e.participou2026.length} em 2026) mas sem deals em andamento. Oportunidade de expandir a conta.` };
+    if (foia2026 && e.dealsAbertos === 0 && e.tipo==="prospect")
+      return { tipo:"monitorar", texto:`Foi a ${e.participou2026.length} evento${e.participou2026.length>1?"s":""} em 2026 mas ainda sem negociação aberta. Nutrir e acompanhar.` };
+    if ((e.convites2026||[]).length === 0 && (e.participou2026||[]).length === 0)
+      return { tipo:"inativo",   texto:`Nenhum convite ou participação em 2026. Avaliar se ainda faz parte da estratégia de eventos do ano.` };
+    return { tipo:"monitorar", texto:`Em acompanhamento. Continuar monitorando engajamento nos próximos eventos.` };
+  };
+
+  const insCalcPot = (e) => Math.min((4-(parseInt(e.tier_growth)||4))*20 + (e.dealsAbertos>0?15:0) + Math.min(e.receita/10000,5), 100);
+  const insCalcEng = (e) => Math.min((e.participou2026||[]).length*25 + (e.convites2026||[]).length*8, 100);
+
+  const TabInsights = () => {
+    const insAllSegs = useMemo(()=>[...new Set([...rawClientes,...rawTarget].map(e=>e.setor_picklist).filter(Boolean))].sort(),[]);
+
+    useEffect(()=>{
+      const handler = e => { if(insSegRef.current&&!insSegRef.current.contains(e.target)) setInsSegOpen(false); };
+      document.addEventListener('mousedown', handler);
+      return ()=>document.removeEventListener('mousedown', handler);
+    },[]);
+
+    const todasEmpresas = useMemo(()=>{
+      const cli = rawClientes.map(r=>{
+        const empresa = rawEmpresas.find(e=>e.company_id===r.company_id)||{};
+        const evs2026 = (empresa.eventos__picklist_de_presenca||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-"));
+        const contatos = rawTargetContatos.filter(c=>c.company_id===r.company_id);
+        const contatosConvites = rawTargetContatos.filter(c=>c.company_id===r.company_id);
+        const convites2026 = [...new Set(contatosConvites.flatMap(c=>(c.eventos__convidado||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-"))))];
+        const dealsEmp = rawDeals.filter(d=>d.company_id===r.company_id);
+        const dealsAbertos = dealsEmp.filter(d=>d.dealstage&&!["closedwon","closedlost"].includes(d.dealstage)).length;
+        const receita = dealsEmp.reduce((s,d)=>s+fAmt(d.amount),0);
+        const contatosMap = contatos.map(ct=>({
+          nome:[ct.firstname,ct.lastname].filter(Boolean).join(" ")||"—",
+          cargo:ct.jobtitle||"",
+          email:ct.email||"",
+          foiEvs:(ct.eventos__participou||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-")),
+        }));
+        return { company_id:r.company_id, name:r.name, tier:r.tier_growth||"", setor:r.setor_picklist||"", tipo:"cliente", dealsAbertos, receita, convites2026, participou2026:evs2026, contatos:contatosMap };
+      });
+      const pro = rawTarget.map(r=>{
+        const contatosConvites = rawTargetContatos.filter(c=>c.company_id===r.company_id);
+        const convites2026 = [...new Set(contatosConvites.flatMap(c=>(c.eventos__convidado||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-"))))];
+        const participou2026 = [...new Set(contatosConvites.flatMap(c=>(c.eventos__participou||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-"))))];
+        const dealsEmp = rawDeals.filter(d=>d.company_id===r.company_id);
+        const dealsAbertos = dealsEmp.filter(d=>d.dealstage&&!["closedwon","closedlost"].includes(d.dealstage)).length;
+        const receita = dealsEmp.reduce((s,d)=>s+fAmt(d.amount),0);
+        const contatosMap = contatosConvites.map(ct=>({
+          nome:[ct.firstname,ct.lastname].filter(Boolean).join(" ")||"—",
+          cargo:ct.jobtitle||"",
+          email:ct.email||"",
+          foiEvs:(ct.eventos__participou||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-")),
+        }));
+        return { company_id:r.company_id, name:r.name, tier:r.tier_growth||"", setor:r.setor_picklist||"", tipo:"prospect", dealsAbertos, receita, convites2026, participou2026, contatos:contatosMap };
+      });
+      return [...cli,...pro].map(e=>({...e, alerta:insClassificar(e), potencial:insCalcPot(e), engajamento:insCalcEng(e)}));
+    },[]);
+
+    const togIT = t => setInsFiltTiers(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
+    const togIS = s => setInsFiltSegs(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s]);
+
+    const filtered = useMemo(()=>
+      todasEmpresas
+        .filter(e=>insFiltTiers.length===0||insFiltTiers.includes(e.tier))
+        .filter(e=>insFiltTipo==="todos"||e.tipo===insFiltTipo)
+        .filter(e=>insFiltSegs.length===0||insFiltSegs.includes(e.setor))
+        .filter(e=>insFiltAlerta==="todos"||e.alerta.tipo===insFiltAlerta)
+        .sort((a,b)=>ORDEM_INS.indexOf(a.alerta.tipo)-ORDEM_INS.indexOf(b.alerta.tipo))
+    ,[todasEmpresas,insFiltTiers,insFiltTipo,insFiltSegs,insFiltAlerta]);
+
+    const contadores = useMemo(()=>{
+      const base = todasEmpresas.filter(e=>(insFiltTiers.length===0||insFiltTiers.includes(e.tier))&&(insFiltTipo==="todos"||e.tipo===insFiltTipo)&&(insFiltSegs.length===0||insFiltSegs.includes(e.setor)));
+      const c={todos:base.length};
+      ORDEM_INS.forEach(k=>{c[k]=base.filter(e=>e.alerta.tipo===k).length;});
+      return c;
+    },[todasEmpresas,insFiltTiers,insFiltTipo,insFiltSegs]);
+
+    const filteredIds = new Set(filtered.map(e=>e.company_id));
+    const QW=860,QH=440;
+
+    const selectEmp = (id)=>{
+      setInsSelec(p=>p===id?null:id);
+      setInsExpanded(p=>p===id?null:id);
+      setTimeout(()=>insRowRefs.current[id]?.scrollIntoView({behavior:"smooth",block:"center"}),80);
+    };
+
+    const TierBadgeIns = ({t})=>{ const tc=TIER_C[t]||"#CCC"; return <span style={{background:`${tc}22`,color:tc,borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${tc}`,display:"inline-block",flexShrink:0}}>{tl(t)}</span>; };
+
+    return (
+      <div>
+        {/* FILTROS */}
+        <div style={{...card,padding:"12px 18px",marginBottom:14,display:"flex",gap:18,alignItems:"center",flexWrap:"wrap"}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{fontSize:10,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",flexShrink:0}}>Tier</span>
+            <div style={{display:"flex",gap:4}}>
+              {["0","1","2","3","4"].map(t=>{ const tc=TIER_C[t]; const ativo=insFiltTiers.includes(t); return <button key={t} onClick={()=>togIT(t)} style={{padding:"3px 9px",fontSize:11,borderRadius:4,border:`1px solid ${ativo?tc:C.border}`,background:ativo?`${tc}18`:"transparent",color:ativo?tc:C.dim,cursor:"pointer",fontFamily:FONT,fontWeight:ativo?700:400}}>T{t}</button>; })}
             </div>
-          )}
-          {gResultado&&(
-            <div>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                <div>
-                  <div style={sTit}>{gResultado.lista?.length} EMPRESAS SELECIONADAS de {gResultado.total_analisado} analisadas</div>
-                </div>
-                <button onClick={exportCSV} style={{background:C.orange,border:"none",borderRadius:6,padding:"7px 14px",color:"#000",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:FONT}}>
-                  ⬇ Exportar CSV
-                </button>
-              </div>
-              {gResultado.resumo&&(
-                <div style={{...card,marginBottom:12,borderLeft:`3px solid ${C.orange}`,padding:"12px 14px"}}>
-                  <div style={{fontSize:10,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:4}}>Estratégia da lista</div>
-                  <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>{gResultado.resumo}</div>
+          </div>
+          <div style={{width:1,height:22,background:C.border}}/>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{fontSize:10,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",flexShrink:0}}>Tipo</span>
+            <div style={{display:"flex",gap:4}}>
+              {["todos","cliente","prospect"].map(t=>{ const ativo=insFiltTipo===t; return <button key={t} onClick={()=>setInsFiltTipo(t)} style={{padding:"3px 10px",fontSize:11,borderRadius:4,border:`1px solid ${ativo?C.orange:C.border}`,background:ativo?"rgba(255,165,0,0.08)":"transparent",color:ativo?C.orange:C.dim,cursor:"pointer",fontFamily:FONT,textTransform:"capitalize"}}>{t==="todos"?"Todos":t==="cliente"?"Clientes":"Prospects"}</button>; })}
+            </div>
+          </div>
+          <div style={{width:1,height:22,background:C.border}}/>
+          <div style={{display:"flex",alignItems:"center",gap:6}} ref={insSegRef}>
+            <span style={{fontSize:10,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",flexShrink:0}}>Segmento</span>
+            <div style={{position:"relative"}}>
+              <button onClick={()=>setInsSegOpen(o=>!o)} style={{padding:"4px 12px",fontSize:11,borderRadius:5,border:`1px solid ${insFiltSegs.length>0?C.orange:C.border}`,background:insFiltSegs.length>0?"rgba(255,165,0,0.08)":"transparent",color:insFiltSegs.length>0?C.orange:C.dim,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",gap:6,minWidth:160}}>
+                <span style={{flex:1,textAlign:"left"}}>{insFiltSegs.length===0?"Todos os segmentos":`${insFiltSegs.length} selecionado${insFiltSegs.length>1?"s":""}`}</span>
+                <span style={{fontSize:9,color:C.muted}}>{insSegOpen?"▲":"▼"}</span>
+              </button>
+              {insSegOpen&&(
+                <div style={{position:"absolute",top:"calc(100% + 4px)",left:0,width:220,background:C.card,border:`1px solid ${C.border}`,borderRadius:6,zIndex:200,boxShadow:"0 8px 24px rgba(0,0,0,0.1)",overflow:"hidden"}}>
+                  <div style={{padding:"6px 10px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontSize:9,color:C.muted,letterSpacing:0.8,textTransform:"uppercase"}}>Segmentos</span>
+                    {insFiltSegs.length>0&&<button onClick={()=>setInsFiltSegs([])} style={{fontSize:9,color:C.muted,background:"none",border:"none",cursor:"pointer",fontFamily:FONT}}>Limpar</button>}
+                  </div>
+                  <div style={{maxHeight:220,overflowY:"auto"}}>
+                    {insAllSegs.map(s=>{ const ativo=insFiltSegs.includes(s); return <div key={s} onClick={()=>togIS(s)} style={{padding:"7px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,background:ativo?"rgba(255,165,0,0.05)":"transparent",fontSize:12,color:ativo?C.orange:C.dim}}><span style={{width:13,height:13,borderRadius:3,border:`1.5px solid ${ativo?C.orange:C.border}`,background:ativo?C.orange:"transparent",display:"inline-flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:"#000",fontSize:8,fontWeight:700}}>{ativo?"✓":""}</span>{s}</div>; })}
+                  </div>
                 </div>
               )}
-              <div style={{...card,padding:0,overflow:"hidden"}}>
-                <table style={{width:"100%",borderCollapse:"collapse"}}>
-                  <thead><tr>
-                    <th style={{...th,width:32,textAlign:"right"}}>#</th>
-                    <th style={{...th,textAlign:"left"}}>EMPRESA</th>
-                    <th style={{...th,width:44,textAlign:"left"}}>TIER</th>
-                    <th style={{...th,width:100,textAlign:"left"}}>SEGMENTO</th>
-                    <th style={{...th,width:80,textAlign:"left"}}>STATUS</th>
-                    <th style={{...th,width:70,textAlign:"left"}}>BASE</th>
-                    <th style={{...th,textAlign:"left"}}>JUSTIFICATIVA</th>
-                  </tr></thead>
-                  <tbody>
-                    {gResultado.lista?.map((r,i)=>{
-                      const t=r.tier||"";
-                      const tb={background:`${TIER_C[t]||"#EEE"}30`,color:TIER_C[t]||"#999",borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${TIER_C[t]||"#DDD"}`,display:"inline-block"};
-                      return (
-                        <tr key={i} style={{background:i%2===0?"rgba(0,0,0,0.02)":"transparent"}}>
-                          <td style={{...td,width:32,textAlign:"right",color:"#CCC",fontSize:11}}>{r.prioridade}</td>
-                          <td style={{...td,color:C.text,fontWeight:500}}>{r.empresa}</td>
-                          <td style={{...td,width:44}}><span style={tb}>{tl(t)}</span></td>
-                          <td style={{...td,width:100,fontSize:11}}>{r.segmento||"—"}</td>
-                          <td style={{...td,width:80,color:r.status==="Cliente"?C.green:C.orange,fontSize:11,fontWeight:500}}>{r.status}</td>
-                          <td style={{...td,width:70}}>
-                            <span style={{background:r.base==="target"?"rgba(99,102,241,0.1)":"rgba(22,163,74,0.1)",color:r.base==="target"?"#6366F1":C.green,borderRadius:3,padding:"1px 6px",fontSize:9,fontWeight:700,border:`1px solid ${r.base==="target"?"#6366F1":C.green}`,display:"inline-block"}}>
-                              {r.base==="target"?"TARGET":"ATIVA"}
-                            </span>
-                          </td>
-                          <td style={{...td,fontSize:11,color:C.dim}}>{r.justificativa}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
             </div>
+          </div>
+          {(insFiltTiers.length>0||insFiltTipo!=="todos"||insFiltSegs.length>0||insFiltAlerta!=="todos")&&(
+            <button onClick={()=>{setInsFiltTiers([]);setInsFiltTipo("todos");setInsFiltSegs([]);setInsFiltAlerta("todos");}} style={{padding:"3px 10px",fontSize:10,borderRadius:4,border:`1px solid ${C.border}`,background:"transparent",color:C.muted,cursor:"pointer",fontFamily:FONT,flexShrink:0}}>✕ Limpar</button>
           )}
+        </div>
+
+        {/* QUADRANTE */}
+        <div style={{...card,padding:"20px 24px",marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+            <div style={{fontSize:11,color:C.orange,fontWeight:700,letterSpacing:0.8,textTransform:"uppercase"}}>Mapa Estratégico de Contas</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {ORDEM_INS.map(k=>{ const a=ALERTAS_INS[k]; const ativo=insFiltAlerta===k; return <button key={k} onClick={()=>setInsFiltAlerta(ativo?"todos":k)} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 10px",fontSize:10,borderRadius:4,border:`1px solid ${ativo?a.color:C.border}`,background:ativo?a.bg:"transparent",color:ativo?a.color:C.dim,cursor:"pointer",fontFamily:FONT}}><span>{a.emoji}</span><span>{a.label}</span><b style={{color:ativo?a.color:C.muted}}>({contadores[k]||0})</b></button>; })}
+            </div>
+          </div>
+          <div style={{position:"relative",width:QW,height:QH,margin:"0 auto"}}>
+            <div style={{position:"absolute",left:0,top:0,width:"50%",height:"50%",background:"rgba(22,163,74,0.05)",borderRadius:"6px 0 0 0",border:"1px solid rgba(22,163,74,0.12)",padding:"8px 10px"}}><span style={{fontSize:9,color:"#16A34A",fontWeight:700}}>🌱 PROSPECT QUENTE</span></div>
+            <div style={{position:"absolute",left:"50%",top:0,width:"50%",height:"50%",background:"rgba(239,68,68,0.05)",borderRadius:"0 6px 0 0",border:"1px solid rgba(239,68,68,0.12)",padding:"8px 10px",display:"flex",justifyContent:"flex-end"}}><span style={{fontSize:9,color:"#EF4444",fontWeight:700}}>🔥 ACIONAR AGORA</span></div>
+            <div style={{position:"absolute",left:0,top:"50%",width:"50%",height:"50%",background:"rgba(0,0,0,0.02)",borderRadius:"0 0 0 6px",border:"1px solid rgba(0,0,0,0.06)",padding:"8px 10px",display:"flex",alignItems:"flex-end"}}><span style={{fontSize:9,color:"#999",fontWeight:700}}>💤 INATIVO / RISCO</span></div>
+            <div style={{position:"absolute",left:"50%",top:"50%",width:"50%",height:"50%",background:"rgba(249,115,22,0.05)",borderRadius:"0 0 6px 0",border:"1px solid rgba(249,115,22,0.12)",padding:"8px 10px",display:"flex",alignItems:"flex-end",justifyContent:"flex-end"}}><span style={{fontSize:9,color:"#F97316",fontWeight:700}}>💛 MORNO</span></div>
+            <div style={{position:"absolute",left:"50%",top:0,width:1,height:"100%",background:"rgba(0,0,0,0.1)",zIndex:1,pointerEvents:"none"}}/>
+            <div style={{position:"absolute",left:0,top:"50%",width:"100%",height:1,background:"rgba(0,0,0,0.1)",zIndex:1,pointerEvents:"none"}}/>
+            {todasEmpresas.map((e,i)=>{
+              const x=(e.engajamento/100)*QW, y=QH-(e.potencial/100)*QH;
+              const a=ALERTAS_INS[e.alerta.tipo]; const isSel=insSelec===e.company_id; const isDim=!filteredIds.has(e.company_id);
+              return (
+                <div key={i} onClick={()=>selectEmp(e.company_id)} style={{position:"absolute",left:x,top:y,transform:"translate(-50%,-50%)",zIndex:isSel?12:isDim?1:3,cursor:"pointer",transition:"all 0.15s",opacity:isDim?0.15:1}}>
+                  <div style={{width:isSel?24:18,height:isSel?24:18,borderRadius:"50%",background:a.color,border:"2px solid #FFF",boxShadow:isSel?`0 0 0 3px ${a.color},0 3px 10px rgba(0,0,0,0.2)`:"0 1px 4px rgba(0,0,0,0.18)",transition:"all 0.15s"}}/>
+                  {isSel&&<div style={{position:"absolute",bottom:"calc(100% + 8px)",left:"50%",transform:"translateX(-50%)",background:C.text,color:"#FFF",fontSize:10,padding:"4px 10px",borderRadius:5,whiteSpace:"nowrap",fontWeight:600,zIndex:20,boxShadow:"0 2px 10px rgba(0,0,0,0.25)"}}>{e.name}<div style={{position:"absolute",top:"100%",left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"5px solid transparent",borderRight:"5px solid transparent",borderTop:`5px solid ${C.text}`}}/></div>}
+                </div>
+              );
+            })}
+            <div style={{position:"absolute",bottom:-20,left:0,width:"100%",display:"flex",justifyContent:"space-between",fontSize:9,color:C.muted,pointerEvents:"none"}}>
+              <span>← Baixo engajamento</span><span style={{fontWeight:600,color:C.dim}}>ENGAJAMENTO (eventos 2026)</span><span>Alto engajamento →</span>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:14,flexWrap:"wrap",marginTop:28,paddingTop:12,borderTop:`1px solid ${C.border}`}}>
+            {ORDEM_INS.map(k=>{ const a=ALERTAS_INS[k]; return <div key={k} style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:9,height:9,borderRadius:"50%",background:a.color,flexShrink:0}}/><span style={{fontSize:9,color:C.dim}}>{a.label} <b style={{color:a.color}}>({contadores[k]||0})</b></span></div>; })}
+            <span style={{fontSize:9,color:C.muted,marginLeft:"auto"}}>Clique em um ponto para expandir</span>
+          </div>
+        </div>
+
+        {/* LISTA */}
+        <div style={{...card,padding:0,overflow:"hidden"}}>
+          <div style={{padding:"9px 16px",borderBottom:`1px solid ${C.border}`,background:"#FAFAF8",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{fontSize:10,color:C.muted,letterSpacing:0.8,textTransform:"uppercase"}}>{filtered.length} empresa{filtered.length!==1?"s":""}</span>
+            <span style={{fontSize:10,color:C.muted}}>Clique para expandir insights e contatos</span>
+          </div>
+          {filtered.map((e,i)=>{
+            const a=ALERTAS_INS[e.alerta.tipo]; const isExp=insExpanded===e.company_id; const isSel=insSelec===e.company_id;
+            const recusados=e.convites2026.filter(c=>!e.participou2026.includes(c)).length;
+            const contatosEng=e.contatos.filter(c=>c.foiEvs.length>0);
+            const contatosAtiv=e.contatos.filter(c=>c.foiEvs.length===0);
+            return (
+              <div key={i} ref={el=>insRowRefs.current[e.company_id]=el}>
+                <div onClick={()=>{setInsExpanded(isExp?null:e.company_id);setInsSelec(isExp?null:e.company_id);}}
+                  style={{padding:"11px 16px",borderBottom:`1px solid ${C.border}`,cursor:"pointer",display:"grid",gridTemplateColumns:"28px 1fr 60px 100px 160px 120px 120px",alignItems:"center",gap:12,background:isExp?a.bg:"transparent",borderLeft:isExp?`3px solid ${a.color}`:"3px solid transparent",transition:"all 0.12s"}}>
+                  <span style={{fontSize:11,color:"#CCC",textAlign:"center"}}>{isExp?"▼":"▶"}</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:14,flexShrink:0}}>{a.emoji}</span><div><div style={{fontSize:12,fontWeight:600,color:C.text}}>{e.name}</div><div style={{fontSize:10,color:C.muted}}>{e.setor}</div></div></div>
+                  <TierBadgeIns t={e.tier}/>
+                  <span style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:3,border:`1px solid ${e.tipo==="cliente"?"rgba(22,163,74,0.3)":"rgba(99,102,241,0.3)"}`,color:e.tipo==="cliente"?C.green:C.purple,background:e.tipo==="cliente"?"rgba(22,163,74,0.08)":"rgba(99,102,241,0.08)",textTransform:"uppercase",textAlign:"center"}}>{e.tipo}</span>
+                  <span style={{fontSize:10,color:a.color,fontWeight:700,letterSpacing:0.4,textTransform:"uppercase"}}>{a.label}</span>
+                  <div style={{display:"flex",gap:8,fontSize:9}}>{e.participou2026.length>0&&<span style={{color:C.green}}>✓ {e.participou2026.length} evento{e.participou2026.length>1?"s":""}</span>}{recusados>0&&<span style={{color:C.tart}}>✗ {recusados} recus.</span>}</div>
+                  <div style={{fontSize:9,color:C.muted,textAlign:"right"}}>{e.dealsAbertos>0?<span style={{color:C.orange}}>💼 {e.dealsAbertos} deal{e.dealsAbertos>1?"s":""}</span>:e.convites2026.length===0?<span>Sem convites</span>:null}</div>
+                </div>
+                {isExp&&(
+                  <div style={{padding:"16px 20px 20px 48px",borderBottom:`1px solid ${C.border}`,background:"#FAFAF8",display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:20}}>
+                    <div>
+                      <div style={{fontSize:9,color:a.color,letterSpacing:0.8,textTransform:"uppercase",fontWeight:700,marginBottom:8}}>💡 Insight</div>
+                      <div style={{background:C.card,border:`1px solid ${a.border}`,borderLeft:`3px solid ${a.color}`,borderRadius:6,padding:"10px 14px"}}>
+                        <div style={{fontSize:12,color:C.text,lineHeight:1.7,marginBottom:8}}>{e.alerta.texto}</div>
+                        {e.participou2026.length>0&&<div style={{fontSize:10,color:C.green,marginBottom:3}}>✅ Participou: {e.participou2026.join(", ")}</div>}
+                        {recusados>0&&<div style={{fontSize:10,color:C.tart,marginBottom:3}}>❌ Recusou: {e.convites2026.filter(c=>!e.participou2026.includes(c)).join(", ")}</div>}
+                        {e.dealsAbertos>0&&<div style={{fontSize:10,color:C.orange}}>💼 {e.dealsAbertos} deal{e.dealsAbertos>1?"s":""} aberto{e.dealsAbertos>1?"s":""}</div>}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{fontSize:9,color:C.green,letterSpacing:0.8,textTransform:"uppercase",fontWeight:700,marginBottom:8}}>👤 Contatos Engajados ({contatosEng.length})</div>
+                      {contatosEng.length===0?<div style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>Nenhum contato foi a evento ainda</div>:contatosEng.map((ct,ci)=>(
+                        <div key={ci} style={{background:C.card,border:"1px solid rgba(22,163,74,0.2)",borderRadius:6,padding:"8px 12px",marginBottom:6}}>
+                          <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:2}}>{ct.nome}</div>
+                          <div style={{fontSize:10,color:C.muted,marginBottom:4}}>{ct.cargo}{ct.email?" · "+ct.email:""}</div>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{ct.foiEvs.map((ev,ei)=><span key={ei} style={{background:"rgba(22,163,74,0.1)",color:C.green,fontSize:9,padding:"1px 6px",borderRadius:3,border:"1px solid rgba(22,163,74,0.25)"}}>✓ {ev}</span>)}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <div style={{fontSize:9,color:C.orange,letterSpacing:0.8,textTransform:"uppercase",fontWeight:700,marginBottom:8}}>🎯 Contatos a Ativar ({contatosAtiv.length})</div>
+                      {contatosAtiv.length===0?<div style={{fontSize:11,color:C.muted,fontStyle:"italic"}}>Todos os contatos já participaram</div>:contatosAtiv.map((ct,ci)=>(
+                        <div key={ci} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"8px 12px",marginBottom:6}}>
+                          <div style={{fontSize:12,fontWeight:600,color:C.text,marginBottom:2}}>{ct.nome}</div>
+                          <div style={{fontSize:10,color:C.muted}}>{ct.cargo}{ct.email?" · "+ct.email:""}</div>
+                          <div style={{fontSize:9,color:C.orange,marginTop:4}}>→ Nunca foi a um evento — convidar no próximo</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {filtered.length===0&&<div style={{padding:"48px 24px",textAlign:"center"}}><div style={{fontSize:28,marginBottom:8}}>🔍</div><div style={{fontSize:12,color:C.muted}}>Nenhuma empresa com os filtros selecionados</div></div>}
         </div>
       </div>
     );
   };
-
 
   if (!authed) return (
     <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,display:"flex",flexDirection:"column"}}>
@@ -1281,7 +1387,7 @@ export default function App() {
           </div>
         </div>
         <div style={{maxWidth:1440,margin:"0 auto",padding:"0 22px",display:"flex"}}>
-          {["Event Dashboard","Performance Dashboard","Comparativo de Eventos","🔍 Search","✨ Gerador"].map((t,i)=>(
+          {["Event Dashboard","Performance Dashboard","👥 Clientes","🎯 Prospects","📊 Insights"].map((t,i)=>(
             <button key={i} onClick={()=>setTab(i)}
               style={{padding:"10px 20px",cursor:"pointer",fontSize:12,fontWeight:tab===i?600:400,color:tab===i?C.orange:"#FFFFFF",borderBottom:tab===i?`2px solid ${C.orange}`:"2px solid transparent",background:"transparent",border:"none",fontFamily:FONT,transition:"color 0.15s",letterSpacing:0.3}}>
               {t}
@@ -1290,7 +1396,7 @@ export default function App() {
         </div>
       </div>
       <div style={{maxWidth:1440,margin:"0 auto",padding:"18px 22px 48px"}}>
-        {tab!==4&&!selEvs.length?(
+        {tab!==2&&tab!==3&&tab!==4&&!selEvs.length?(
           <div style={{...card,padding:"56px 24px",textAlign:"center"}}>
             <div style={{fontSize:32,marginBottom:10}}>🎯</div>
             <div style={{fontSize:14,color:C.orange,fontWeight:600,marginBottom:6}}>Selecione um ou mais eventos para começar</div>
@@ -1302,9 +1408,9 @@ export default function App() {
           <>
             {tab===0&&<Tab1/>}
             {tab===1&&<Tab2/>}
-            {tab===2&&<Tab3/>}
-            {tab===3&&<Tab4/>}
-            {tab===4&&<Tab5/>}
+            {tab===2&&<TabClientes/>}
+            {tab===3&&<TabProspects/>}
+            {tab===4&&<TabInsights/>}
           </>
         )}
       </div>
