@@ -455,6 +455,19 @@ export default function App() {
     );
   };
 
+  const handleLogin = async () => {
+    setLoginLoading(true); setLoginErr("");
+    try {
+      const res = await fetch("/api/auth", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email:loginEmail, password:loginPass}) });
+      const data = await res.json();
+      if (data.ok) { sessionStorage.setItem("eh_user", loginEmail); setAuthed(true); }
+      else setLoginErr(data.error||"Credenciais inválidas");
+    } catch(e) { setLoginErr("Erro de conexão"); }
+    setLoginLoading(false);
+  };
+
+  const handleLogout = () => { sessionStorage.removeItem("eh_user"); setAuthed(false); };
+
   const Tab1 = ()=>(
     <div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8,marginBottom:16}}>
