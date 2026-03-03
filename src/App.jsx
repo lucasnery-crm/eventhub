@@ -283,7 +283,7 @@ export default function App() {
   // Map evento -> custo
   const custoMap = useMemo(()=>{
     const m={};
-    rawCustos.forEach(r=>{ if(r.evento) m[r.evento.trim()]=fAmt(r.custo); });
+    rawCustos.forEach(r=>{ const ev=(r.evento||r.eventos||"").trim(); if(ev) m[ev]=fAmt(r.custo); });
     return m;
   },[rawCustos]);
 
@@ -291,7 +291,7 @@ export default function App() {
   function calcProjecao(deal) {
     const mrr = fAmt(deal.amount);
     if(!mrr) return 0;
-    const created = parseReal(deal.createdate);
+    const created = parseReal(deal.data_real);
     if(!created) return 0;
     const fechamento = new Date(created.getTime() + 120*24*60*60*1000);
     const hoje = new Date();
@@ -842,13 +842,16 @@ export default function App() {
                                   {c.contatos.map((ct,ci)=>{
                                     const foiEvs = (ct.eventos__participou||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-"));
                                     return (
-                                      <div key={ci} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"8px 12px"}}>
-                                        <div style={{fontSize:12,fontWeight:600,color:C.text}}>{[ct.firstname,ct.lastname].filter(Boolean).join(" ")||"—"}</div>
+                                      <div key={ci} style={{background:C.card,border:`1px solid ${foiEvs.length>0?"rgba(22,163,74,0.25)":C.border}`,borderRadius:6,padding:"8px 12px"}}>
+                                        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                                          {foiEvs.length>0&&<span style={{fontSize:13}}>✅</span>}
+                                          <span style={{fontSize:12,fontWeight:600,color:foiEvs.length>0?C.green:C.text}}>{[ct.firstname,ct.lastname].filter(Boolean).join(" ")||"—"}</span>
+                                        </div>
                                         <div style={{fontSize:10,color:C.muted}}>{ct.jobtitle||""} {ct.email?"· "+ct.email:""}</div>
                                         {foiEvs.length>0&&(
                                           <div style={{marginTop:5,display:"flex",gap:4,flexWrap:"wrap"}}>
                                             {foiEvs.map((ev,ei)=>(
-                                              <span key={ei} style={{background:"rgba(255,165,0,0.1)",color:C.orange,fontSize:9,padding:"1px 6px",borderRadius:3,border:"1px solid rgba(255,165,0,0.3)"}}>
+                                              <span key={ei} style={{background:"rgba(22,163,74,0.1)",color:C.green,fontSize:9,padding:"1px 6px",borderRadius:3,border:"1px solid rgba(22,163,74,0.25)"}}>
                                                 ✓ {ev.replace(/^\d{4}-\d{2} /,"")}
                                               </span>
                                             ))}
@@ -975,14 +978,21 @@ export default function App() {
                                   {p.contatos.map((ct,ci)=>{
                                     const foiEvs = (ct.eventos__participou||"").split(";").map(e=>e.trim()).filter(e=>e.startsWith("2026-"));
                                     return (
-                                      <div key={ci} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:6,padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                                        <div>
-                                          <div style={{fontSize:12,fontWeight:600,color:C.text}}>{[ct.firstname,ct.lastname].filter(Boolean).join(" ")||"—"}</div>
-                                          <div style={{fontSize:10,color:C.muted}}>{ct.jobtitle||""} {ct.email?"· "+ct.email:""}</div>
+                                      <div key={ci} style={{background:C.card,border:`1px solid ${foiEvs.length>0?"rgba(22,163,74,0.25)":C.border}`,borderRadius:6,padding:"8px 12px"}}>
+                                        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                                          {foiEvs.length>0&&<span style={{fontSize:13}}>✅</span>}
+                                          <span style={{fontSize:12,fontWeight:600,color:foiEvs.length>0?C.green:C.text}}>{[ct.firstname,ct.lastname].filter(Boolean).join(" ")||"—"}</span>
                                         </div>
-                                        <span style={{background:foiEvs.length>0?"rgba(22,163,74,0.1)":"rgba(0,0,0,0.04)",color:foiEvs.length>0?C.green:C.muted,borderRadius:4,padding:"2px 8px",fontSize:10,fontWeight:600,border:`1px solid ${foiEvs.length>0?"rgba(22,163,74,0.2)":C.border}`,flexShrink:0}}>
-                                          {foiEvs.length>0?"✓ Foi a evento":"Não foi"}
-                                        </span>
+                                        <div style={{fontSize:10,color:C.muted}}>{ct.jobtitle||""} {ct.email?"· "+ct.email:""}</div>
+                                        {foiEvs.length>0&&(
+                                          <div style={{marginTop:5,display:"flex",gap:4,flexWrap:"wrap"}}>
+                                            {foiEvs.map((ev,ei)=>(
+                                              <span key={ei} style={{background:"rgba(22,163,74,0.1)",color:C.green,fontSize:9,padding:"1px 6px",borderRadius:3,border:"1px solid rgba(22,163,74,0.25)"}}>
+                                                ✓ {ev}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   })}
@@ -1065,8 +1075,32 @@ export default function App() {
     return { tipo:"monitorar", texto:`Em acompanhamento. Continuar monitorando engajamento nos próximos eventos.` };
   };
 
-  const insCalcPot = (e) => Math.min((4-(parseInt(e.tier_growth)||4))*20 + (e.dealsAbertos>0?15:0) + Math.min(e.receita/10000,5), 100);
-  const insCalcEng = (e) => Math.min((e.participou2026||[]).length*25 + (e.convites2026||[]).length*8, 100);
+  const insCalcPot = (e) => {
+    // Tier: menos dominante para permitir dispersão
+    const tierScore = ({0:50,1:38,2:25,3:12,4:5}[e.tier]||5);
+    // Deal aberto: bônus fixo
+    const dealBonus = e.dealsAbertos>0 ? 15 : 0;
+    // Valor do deal: escala logarítmica até 30pts
+    const valorScore = e.receita>0 ? Math.min(Math.log10(e.receita/1000+1)*15, 30) : 0;
+    // Cliente ativo
+    const clienteBonus = e.tipo==="cliente" ? 5 : 0;
+    return Math.min(tierScore + dealBonus + valorScore + clienteBonus, 100);
+  };
+
+  const insCalcEng = (e) => {
+    const participou = (e.participou2026||[]);
+    const convites   = (e.convites2026||[]);
+    const contatos   = (e.contatos||[]);
+    // Eventos participados: 15pts cada, max 45pts
+    const evScore = Math.min(participou.length * 15, 45);
+    // Contatos que foram: 8pts cada, max 32pts
+    const ctScore = Math.min(contatos.filter(c=>(c.foiEvs||[]).length>0).length * 8, 32);
+    // Taxa de comparecimento: até 15pts
+    const taxaScore = convites.length>0 ? Math.round((participou.length/convites.length)*15) : 0;
+    // Penalidade se nunca foi convidado
+    const penalidade = convites.length===0 && participou.length===0 ? -10 : 0;
+    return Math.max(Math.min(evScore + ctScore + taxaScore + penalidade, 100), 0);
+  };
 
   const TabInsights = () => {
     const insAllSegs = useMemo(()=>[...new Set([...rawClientes,...rawTarget].map(e=>e.setor_picklist).filter(Boolean))].sort(),[]);
@@ -1397,6 +1431,9 @@ export default function App() {
           </>
         )}
       </div>
+    </div>
+  );
+}
     </div>
   );
 }
