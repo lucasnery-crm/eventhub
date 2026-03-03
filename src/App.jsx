@@ -1076,15 +1076,20 @@ export default function App() {
   };
 
   const insCalcPot = (e) => {
-    // Tier: menos dominante para permitir dispersão
-    const tierScore = ({0:50,1:38,2:25,3:12,4:5}[e.tier]||5);
-    // Deal aberto: bônus fixo
-    const dealBonus = e.dealsAbertos>0 ? 15 : 0;
-    // Valor do deal: escala logarítmica até 30pts
-    const valorScore = e.receita>0 ? Math.min(Math.log10(e.receita/1000+1)*15, 30) : 0;
-    // Cliente ativo
+    const inativo = (e.convites2026||[]).length===0 && (e.participou2026||[]).length===0;
+    // Inativo: teto de 18pts independente do tier — fica no canto inferior
+    if (inativo) {
+      const tierBase = ({0:18,1:14,2:10,3:6,4:3}[e.tier]||3);
+      const dealBonus = e.dealsAbertos>0 ? 8 : 0;
+      return Math.min(tierBase + dealBonus, 22);
+    }
+    // Ativo: tier + deals + receita + engajamento
+    const tierScore  = ({0:45,1:35,2:24,3:13,4:5}[e.tier]||5);
+    const dealBonus  = e.dealsAbertos>0 ? 20 : 0;
+    const valorScore = e.receita>0 ? Math.min(Math.log10(e.receita/1000+1)*15, 25) : 0;
     const clienteBonus = e.tipo==="cliente" ? 5 : 0;
-    return Math.min(tierScore + dealBonus + valorScore + clienteBonus, 100);
+    const engBonus = Math.min(insCalcEng(e) * 0.1, 10);
+    return Math.min(tierScore + dealBonus + valorScore + clienteBonus + engBonus, 100);
   };
 
   const insCalcEng = (e) => {
