@@ -1369,11 +1369,9 @@ export default function App() {
               Event<span style={{color:C.orange}}>Hub</span>
 
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <span style={{fontSize:9,color:"#AAA",letterSpacing:2}}>ANÁLISE ESTRATÉGICA DE EVENTOS</span>
-          <button onClick={handleLogout} style={{background:"transparent",border:"1px solid #444",borderRadius:5,padding:"4px 12px",color:"#AAA",fontSize:11,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Sair</button>
-        </div>
+            <div style={{display:"flex",alignItems:"center",gap:16}}>
+              <span style={{fontSize:9,color:"#AAA",letterSpacing:2}}>ANÁLISE ESTRATÉGICA DE EVENTOS</span>
+              <button onClick={handleLogout} style={{background:"transparent",border:"1px solid #444",borderRadius:5,padding:"4px 12px",color:"#AAA",fontSize:11,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Sair</button>
             </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,flexWrap:"wrap"}}>
@@ -1431,9 +1429,6 @@ export default function App() {
           </>
         )}
       </div>
-    </div>
-  );
-}
     </div>
   );
 }
