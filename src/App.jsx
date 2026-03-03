@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from "recharts";
 
 const PROXY_URL = "/api/sheet";
@@ -119,17 +119,22 @@ export default function App() {
   const [loadMsg, setLoadMsg] = useState("Carregando...");
   const [loadErr, setLoadErr] = useState("");
   const [selEvs, setSelEvs] = useState([]);
+  const [authed, setAuthed]             = useState(()=>!!sessionStorage.getItem("eh_user"));
+  const [loginEmail, setLoginEmail]     = useState("");
+  const [loginPass, setLoginPass]       = useState("");
+  const [loginErr, setLoginErr]         = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
   const [tab, setTab] = useState(0);
   const [q, setQ] = useState("");
   const [searchQ, setSearchQ] = useState("");
   const [open, setOpen] = useState(false);
   const [expandedEmp, setExpandedEmp] = useState(null);
   const [demoMode, setDemoMode] = useState(false);
-  const [authed, setAuthed] = useState(()=>!!sessionStorage.getItem("eh_user"));
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPass, setLoginPass] = useState("");
-  const [loginErr, setLoginErr] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
+
+
+
+
+
   const ref = useRef(null);
 
   useEffect(()=>{
@@ -206,35 +211,7 @@ export default function App() {
     setLoading(false);
   };
 
-  const handleLogin = async(e) => {
-    e.preventDefault();
-    setLoginLoading(true);
-    setLoginErr("");
-    try {
-      const res = await fetch("/api/auth", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({email:loginEmail.trim(), password:loginPass})
-      });
-      const data = await res.json();
-      if(data.ok) {
-        sessionStorage.setItem("eh_user", data.email);
-        setAuthed(true);
-      } else {
-        setLoginErr(data.error || "Erro ao autenticar");
-      }
-    } catch(err) {
-      setLoginErr("Erro de conexão");
-    }
-    setLoginLoading(false);
-  };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("eh_user");
-    setAuthed(false);
-    setLoginEmail("");
-    setLoginPass("");
-  };
 
   const dp = useCallback(v=>(!v?"":dpMap[v]||v), [dpMap]);
 
@@ -1296,43 +1273,6 @@ export default function App() {
     );
   };
 
-  if (!authed) return (
-    <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,display:"flex",flexDirection:"column"}}>
-      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
-      <div style={{background:C.headerBg,borderBottom:`3px solid ${C.orange}`,padding:"10px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{display:"flex",alignItems:"center",gap:9,fontWeight:700,fontSize:16,color:"#FFF"}}>
-          <div style={{background:C.orange,borderRadius:5,width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#000"}}>⚡</div>
-          Event<span style={{color:C.orange}}>Hub</span>
-        </div>
-        <span style={{fontSize:9,color:"#AAA",letterSpacing:2}}>ANÁLISE ESTRATÉGICA DE EVENTOS</span>
-      </div>
-      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:"36px 32px",width:360,boxShadow:"0 4px 24px rgba(0,0,0,0.08)",borderTop:`3px solid ${C.orange}`}}>
-          <div style={{textAlign:"center",marginBottom:28}}>
-            <div style={{fontSize:13,color:C.text,fontWeight:600,marginBottom:4}}>Bem-vindo ao EventHub</div>
-            <div style={{fontSize:11,color:C.muted,letterSpacing:0.8}}>Use seu e-mail @crmbonus.com para entrar</div>
-          </div>
-          <form onSubmit={handleLogin}>
-            <div style={{marginBottom:12}}>
-              <label style={{fontSize:10,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",display:"block",marginBottom:5}}>E-mail</label>
-              <input type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} placeholder="seu.nome@crmbonus.com" required
-                style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"9px 12px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-            </div>
-            <div style={{marginBottom:20}}>
-              <label style={{fontSize:10,color:C.muted,letterSpacing:0.8,textTransform:"uppercase",display:"block",marginBottom:5}}>Senha</label>
-              <input type="password" value={loginPass} onChange={e=>setLoginPass(e.target.value)} placeholder="••••••••" required
-                style={{width:"100%",background:C.bg,border:`1px solid ${C.border}`,borderRadius:6,padding:"9px 12px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-            </div>
-            {loginErr&&<div style={{background:"rgba(252,70,69,0.06)",border:`1px solid rgba(252,70,69,0.3)`,borderRadius:6,padding:"8px 12px",fontSize:12,color:C.tart,marginBottom:14}}>{loginErr}</div>}
-            <button type="submit" disabled={loginLoading}
-              style={{width:"100%",background:C.orange,border:"none",borderRadius:6,padding:"10px",color:"#000",fontSize:13,fontWeight:700,cursor:loginLoading?"not-allowed":"pointer",fontFamily:FONT,opacity:loginLoading?0.7:1}}>
-              {loginLoading?"Entrando...":"Entrar"}
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
 
   if (loading) return (
     <div style={{background:C.bg,minHeight:"100vh",fontFamily:FONT,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:14}}>
@@ -1340,6 +1280,34 @@ export default function App() {
       <div style={{width:36,height:36,border:`2px solid ${C.border}`,borderTopColor:C.orange,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
       <span style={{fontSize:11,color:C.muted,letterSpacing:1.5}}>{loadMsg.toUpperCase()}</span>
       {loadErr&&<span style={{fontSize:12,color:C.tart,maxWidth:400,textAlign:"center"}}>{loadErr}</span>}
+    </div>
+  );
+
+  if (!authed) return (
+    <div style={{minHeight:"100vh",background:"#F5F5F0",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans', sans-serif"}}>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+      <div style={{background:"#FFF",borderRadius:12,padding:"40px 36px",width:360,boxShadow:"0 4px 24px rgba(0,0,0,0.08)",border:"1px solid #E2E2DC"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:28,justifyContent:"center"}}>
+          <div style={{background:"#FFA500",borderRadius:6,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#000"}}>⚡</div>
+          <span style={{fontWeight:700,fontSize:20,color:"#1A1A1A"}}>Event<span style={{color:"#FFA500"}}>Hub</span></span>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:11,color:"#999",letterSpacing:0.8,textTransform:"uppercase",display:"block",marginBottom:5}}>Email</label>
+          <input value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} type="email" placeholder="seu@email.com"
+            style={{width:"100%",padding:"9px 12px",border:"1px solid #E2E2DC",borderRadius:6,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
+        </div>
+        <div style={{marginBottom:20}}>
+          <label style={{fontSize:11,color:"#999",letterSpacing:0.8,textTransform:"uppercase",display:"block",marginBottom:5}}>Senha</label>
+          <input value={loginPass} onChange={e=>setLoginPass(e.target.value)} type="password" placeholder="••••••••"
+            onKeyDown={e=>e.key==="Enter"&&handleLogin()}
+            style={{width:"100%",padding:"9px 12px",border:"1px solid #E2E2DC",borderRadius:6,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:"inherit"}}/>
+        </div>
+        {loginErr&&<div style={{fontSize:12,color:"#FC4645",marginBottom:12,textAlign:"center"}}>{loginErr}</div>}
+        <button onClick={handleLogin} disabled={loginLoading||!loginEmail||!loginPass}
+          style={{width:"100%",background:(!loginEmail||!loginPass)?"#E2E2DC":"#FFA500",border:"none",borderRadius:6,padding:"10px",color:(!loginEmail||!loginPass)?"#999":"#000",fontSize:13,fontWeight:700,cursor:(!loginEmail||!loginPass||loginLoading)?"not-allowed":"pointer",fontFamily:"inherit"}}>
+          {loginLoading?"Entrando...":"Entrar"}
+        </button>
+      </div>
     </div>
   );
 
@@ -1355,8 +1323,10 @@ export default function App() {
 
             </div>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <span style={{fontSize:9,color:"#AAA",letterSpacing:2}}>ANÁLISE ESTRATÉGICA DE EVENTOS</span>
-              <button onClick={handleLogout} style={{background:"transparent",border:"1px solid #444",borderRadius:4,padding:"3px 10px",color:"#888",fontSize:10,cursor:"pointer",fontFamily:FONT}}>Sair</button>
+              <div style={{display:"flex",alignItems:"center",gap:16}}>
+          <span style={{fontSize:9,color:"#AAA",letterSpacing:2}}>ANÁLISE ESTRATÉGICA DE EVENTOS</span>
+          <button onClick={handleLogout} style={{background:"transparent",border:"1px solid #444",borderRadius:5,padding:"4px 12px",color:"#AAA",fontSize:11,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>Sair</button>
+        </div>
             </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,flexWrap:"wrap"}}>
